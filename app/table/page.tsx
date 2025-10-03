@@ -8,7 +8,38 @@ import { ArrowLeft, Trophy, TrendingUp, TrendingDown, Medal } from "lucide-react
 export default async function TablePage() {
   const supabase = await createClient()
 
-  const { data: standings } = await supabase.from("league_standings").select("*").order("position")
+  // Try to get standings from the view first
+  const { data: standings, error: standingsError } = await supabase
+    .from("league_standings")
+    .select("*")
+    .order("points", { ascending: false })
+
+  // If no standings data, get teams and create basic standings
+  let displayData = standings
+
+  if (!standings || standings.length === 0) {
+    const { data: teams, error: teamsError } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("is_active", true)
+
+    if (teams && teams.length > 0) {
+      // Create basic standings structure for teams without match data
+      displayData = teams.map((team, index) => ({
+        id: team.id,
+        team_name: team.name,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        goals_for: 0,
+        goals_against: 0,
+        goal_difference: 0,
+        points: 0,
+        position: index + 1
+      }))
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,7 +74,7 @@ export default async function TablePage() {
       <div className="mx-auto max-w-7xl px-6 py-12">
         <Card className="overflow-hidden border-accent/30">
           <CardContent className="p-0">
-            {standings && standings.length > 0 ? (
+            {displayData && displayData.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -61,7 +92,7 @@ export default async function TablePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {standings.map((team, index) => (
+                    {displayData.map((team, index) => (
                       <tr
                         key={team.id}
                         className={`border-b border-border/50 transition-colors hover:bg-accent/10 ${
@@ -132,11 +163,27 @@ export default async function TablePage() {
               </div>
             ) : (
               <div className="flex h-64 items-center justify-center text-muted-foreground">
-                No standings available yet
+                <div className="text-center">
+                  <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <h3 className="text-lg font-semibold mb-2">No teams registered yet</h3>
+                  <p>Teams will appear here once they are registered in the system.</p>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {displayData && displayData.length > 0 && !standings && (
+          <div className="mt-6 rounded-lg bg-blue-500/10 border border-blue-500/30 p-4">
+            <div className="flex items-center gap-2 text-blue-400">
+              <Trophy className="h-5 w-5" />
+              <p className="font-semibold">League Starting Soon!</p>
+            </div>
+            <p className="text-sm text-blue-300 mt-1">
+              Teams are registered but no matches have been completed yet. Standings will update automatically as match results are recorded.
+            </p>
+          </div>
+        )}
 
         <div className="mt-8 rounded-lg bg-card border border-accent/30 p-6">
           <h3 className="mb-3 font-bold text-lg">Table Key</h3>

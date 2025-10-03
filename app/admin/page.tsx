@@ -27,9 +27,48 @@ export default async function AdminDashboard() {
     .limit(1)
     .single()
 
-  const { data: topTeams } = await supabase.from("league_standings").select("*").limit(7)
+  // Get top teams from standings or fallback to basic teams
+  const { data: topTeams } = await supabase
+    .from("league_standings")
+    .select("*")
+    .order("points", { ascending: false })
+    .limit(7)
+
+  // If no standings data, get basic teams info
+  let displayTeams = topTeams
+  if (!topTeams || topTeams.length === 0) {
+    const { data: basicTeams } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("is_active", true)
+      .limit(7)
+
+    if (basicTeams && basicTeams.length > 0) {
+      displayTeams = basicTeams.map((team, index) => ({
+        id: team.id,
+        team_name: team.name,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        goal_difference: 0,
+        points: 0
+      }))
+    }
+  }
 
   const { data: players } = await supabase.from("players").select("*", { count: "exact" })
+
+  // Get top scorers and assists
+  const { data: topScorers } = await supabase
+    .from("top_scorers")
+    .select("*")
+    .limit(5)
+
+  const { data: topAssists } = await supabase
+    .from("top_assists")
+    .select("*")
+    .limit(5)
 
   const totalTeams = teams?.length || 0
   const totalMatches = matches?.length || 0
@@ -126,7 +165,7 @@ export default async function AdminDashboard() {
           </Card>
         </div>
 
-        {topTeams && topTeams.length > 0 && (
+        {displayTeams && displayTeams.length > 0 && (
           <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -161,7 +200,7 @@ export default async function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {topTeams.map((team: LeagueStanding, index: number) => (
+                    {displayTeams.map((team: LeagueStanding, index: number) => (
                       <tr key={team.id} className="border-b border-slate-800 hover:bg-slate-900/50">
                         <td className="py-4 text-left">
                           <span
@@ -240,6 +279,93 @@ export default async function AdminDashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Player Statistics */}
+        {(topScorers && topScorers.length > 0) || (topAssists && topAssists.length > 0) ? (
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Top Scorers */}
+            {topScorers && topScorers.length > 0 && (
+              <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-emerald-400" />
+                    <CardTitle className="text-white">Top Scorers</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {topScorers.map((scorer, index) => (
+                      <div key={scorer.id} className="flex items-center justify-between py-2 border-b border-slate-700 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
+                            index === 0 ? "bg-emerald-500/20 text-emerald-400" :
+                            index === 1 ? "bg-slate-500/20 text-slate-300" :
+                            index === 2 ? "bg-amber-700/20 text-amber-600" :
+                            "bg-slate-800 text-slate-400"
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white">
+                              {scorer.player_name}
+                              {scorer.jersey_number && <span className="text-slate-400 ml-1">#{scorer.jersey_number}</span>}
+                            </p>
+                            <p className="text-sm text-slate-400">{scorer.team_name}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-emerald-400">{scorer.goals}</p>
+                          <p className="text-xs text-slate-400">goals</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Top Assists */}
+            {topAssists && topAssists.length > 0 && (
+              <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-400" />
+                    <CardTitle className="text-white">Top Assists</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {topAssists.map((assist, index) => (
+                      <div key={assist.id} className="flex items-center justify-between py-2 border-b border-slate-700 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
+                            index === 0 ? "bg-blue-500/20 text-blue-400" :
+                            index === 1 ? "bg-slate-500/20 text-slate-300" :
+                            index === 2 ? "bg-amber-700/20 text-amber-600" :
+                            "bg-slate-800 text-slate-400"
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white">
+                              {assist.player_name}
+                              {assist.jersey_number && <span className="text-slate-400 ml-1">#{assist.jersey_number}</span>}
+                            </p>
+                            <p className="text-sm text-slate-400">{assist.team_name}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-blue-400">{assist.assists}</p>
+                          <p className="text-xs text-slate-400">assists</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ) : null}
 
         <div>
           <h2 className="mb-4 text-2xl font-bold text-white">Quick Actions</h2>
