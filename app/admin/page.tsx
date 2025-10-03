@@ -9,66 +9,123 @@ import type { LeagueStanding } from "@/lib/types"
 export default async function AdminDashboard() {
   const supabase = await createClient()
 
-  // Fetch dashboard stats
-  const { data: teams } = await supabase.from("teams").select("*", { count: "exact" })
+  // Fetch dashboard stats with error handling
+  let teams = null
+  let matches = null
+  let completedMatches = null
+  let upcomingMatches = null
 
-  const { data: matches } = await supabase.from("matches").select("*", { count: "exact" })
-
-  const { data: completedMatches } = await supabase
-    .from("matches")
-    .select("*", { count: "exact" })
-    .eq("is_completed", true)
-
-  const { data: upcomingMatches } = await supabase
-    .from("matches")
-    .select("*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)")
-    .eq("is_completed", false)
-    .order("match_date", { ascending: true })
-    .limit(1)
-    .single()
-
-  // Get top teams from standings or fallback to basic teams
-  const { data: topTeams } = await supabase
-    .from("league_standings")
-    .select("*")
-    .order("points", { ascending: false })
-    .limit(7)
-
-  // If no standings data, get basic teams info
-  let displayTeams = topTeams
-  if (!topTeams || topTeams.length === 0) {
-    const { data: basicTeams } = await supabase
-      .from("teams")
-      .select("*")
-      .eq("is_active", true)
-      .limit(7)
-
-    if (basicTeams && basicTeams.length > 0) {
-      displayTeams = basicTeams.map((team, index) => ({
-        id: team.id,
-        team_name: team.name,
-        played: 0,
-        won: 0,
-        drawn: 0,
-        lost: 0,
-        goal_difference: 0,
-        points: 0
-      }))
-    }
+  try {
+    const { data: teamsData } = await supabase.from("teams").select("*", { count: "exact" })
+    teams = teamsData
+  } catch (error) {
+    console.error("Error fetching teams:", error)
+    teams = []
   }
 
-  const { data: players } = await supabase.from("players").select("*", { count: "exact" })
+  try {
+    const { data: matchesData } = await supabase.from("matches").select("*", { count: "exact" })
+    matches = matchesData
+  } catch (error) {
+    console.error("Error fetching matches:", error)
+    matches = []
+  }
 
-  // Get top scorers and assists
-  const { data: topScorers } = await supabase
-    .from("top_scorers")
-    .select("*")
-    .limit(5)
+  try {
+    const { data: completedData } = await supabase
+      .from("matches")
+      .select("*", { count: "exact" })
+      .eq("is_completed", true)
+    completedMatches = completedData
+  } catch (error) {
+    console.error("Error fetching completed matches:", error)
+    completedMatches = []
+  }
 
-  const { data: topAssists } = await supabase
-    .from("top_assists")
-    .select("*")
-    .limit(5)
+  try {
+    const { data: upcomingData } = await supabase
+      .from("matches")
+      .select("*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)")
+      .eq("is_completed", false)
+      .order("match_date", { ascending: true })
+      .limit(1)
+      .single()
+    upcomingMatches = upcomingData
+  } catch (error) {
+    console.error("Error fetching upcoming matches:", error)
+    upcomingMatches = null
+  }
+
+  // Get top teams from standings or fallback to basic teams
+  let displayTeams = null
+  let players = null
+
+  try {
+    const { data: topTeams } = await supabase
+      .from("league_standings")
+      .select("*")
+      .order("points", { ascending: false })
+      .limit(7)
+
+    displayTeams = topTeams
+
+    // If no standings data, get basic teams info
+    if (!topTeams || topTeams.length === 0) {
+      const { data: basicTeams } = await supabase
+        .from("teams")
+        .select("*")
+        .eq("is_active", true)
+        .limit(7)
+
+      if (basicTeams && basicTeams.length > 0) {
+        displayTeams = basicTeams.map((team, index) => ({
+          id: team.id,
+          team_name: team.name,
+          played: 0,
+          won: 0,
+          drawn: 0,
+          lost: 0,
+          goal_difference: 0,
+          points: 0
+        }))
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching league standings:", error)
+    displayTeams = []
+  }
+
+  try {
+    const { data: playersData } = await supabase.from("players").select("*", { count: "exact" })
+    players = playersData
+  } catch (error) {
+    console.error("Error fetching players:", error)
+    players = []
+  }
+
+  // Get top scorers and assists (with error handling for missing views)
+  let topScorers = null
+  let topAssists = null
+
+  try {
+    const { data: scorersData } = await supabase
+      .from("top_scorers")
+      .select("*")
+      .limit(5)
+    topScorers = scorersData
+  } catch (error) {
+    console.log("Top scorers view not available yet")
+  }
+
+  try {
+    const { data: assistsData } = await supabase
+      .from("top_assists")
+      .select("*")
+      .limit(5)
+    topAssists = assistsData
+  } catch (error) {
+    console.log("Top assists view not available yet")
+  }
 
   const totalTeams = teams?.length || 0
   const totalMatches = matches?.length || 0
@@ -78,89 +135,89 @@ export default async function AdminDashboard() {
 
   return (
     <AdminAuthWrapper>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <div className="flex items-center justify-between">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-3 md:p-6">
+      <div className="mx-auto max-w-7xl space-y-6 md:space-y-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-emerald-500 p-2">
-                <Trophy className="h-6 w-6 text-white" />
+                <Trophy className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
-              <h1 className="text-4xl font-bold text-white">Admin Dashboard</h1>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Admin Dashboard</h1>
             </div>
-            <p className="text-slate-300 text-lg">Manage Seeta League</p>
+            <p className="text-slate-300 text-sm md:text-lg">Manage Seeta League</p>
           </div>
           <Link href="/">
-            <Button variant="outline" className="gap-2 border-slate-700 bg-slate-800/50 text-white hover:bg-slate-700">
+            <Button variant="outline" className="gap-2 border-slate-700 bg-slate-800/50 text-white hover:bg-slate-700 w-full sm:w-auto">
               <Home className="h-4 w-4" />
-              View Public Site
+              <span className="sm:inline">View Public Site</span>
             </Button>
           </Link>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-3 grid-cols-2 md:gap-6 md:grid-cols-3 lg:grid-cols-5">
           <Card className="border-slate-700 bg-gradient-to-br from-blue-900/40 to-blue-950/40 backdrop-blur">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 md:pb-3">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-blue-200">Total Teams</CardDescription>
-                <Users className="h-5 w-5 text-blue-400" />
+                <CardDescription className="text-xs md:text-sm text-blue-200">Total Teams</CardDescription>
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-blue-400" />
               </div>
-              <CardTitle className="text-5xl font-bold text-white">{totalTeams}</CardTitle>
+              <CardTitle className="text-2xl md:text-3xl lg:text-5xl font-bold text-white">{totalTeams}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-blue-300">Registered teams</p>
+            <CardContent className="pt-0">
+              <p className="text-xs md:text-sm text-blue-300">Registered teams</p>
             </CardContent>
           </Card>
 
           <Card className="border-slate-700 bg-gradient-to-br from-cyan-900/40 to-cyan-950/40 backdrop-blur">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 md:pb-3">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-cyan-200">Total Players</CardDescription>
-                <UserCircle className="h-5 w-5 text-cyan-400" />
+                <CardDescription className="text-xs md:text-sm text-cyan-200">Total Players</CardDescription>
+                <UserCircle className="h-4 w-4 md:h-5 md:w-5 text-cyan-400" />
               </div>
-              <CardTitle className="text-5xl font-bold text-white">{totalPlayers}</CardTitle>
+              <CardTitle className="text-2xl md:text-3xl lg:text-5xl font-bold text-white">{totalPlayers}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-cyan-300">Registered players</p>
+            <CardContent className="pt-0">
+              <p className="text-xs md:text-sm text-cyan-300">Registered players</p>
             </CardContent>
           </Card>
 
           <Card className="border-slate-700 bg-gradient-to-br from-amber-900/40 to-amber-950/40 backdrop-blur">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 md:pb-3">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-amber-200">Scheduled</CardDescription>
-                <Calendar className="h-5 w-5 text-amber-400" />
+                <CardDescription className="text-xs md:text-sm text-amber-200">Scheduled</CardDescription>
+                <Calendar className="h-4 w-4 md:h-5 md:w-5 text-amber-400" />
               </div>
-              <CardTitle className="text-5xl font-bold text-white">{scheduled}</CardTitle>
+              <CardTitle className="text-2xl md:text-3xl lg:text-5xl font-bold text-white">{scheduled}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-amber-300">Upcoming matches</p>
+            <CardContent className="pt-0">
+              <p className="text-xs md:text-sm text-amber-300">Upcoming matches</p>
             </CardContent>
           </Card>
 
           <Card className="border-slate-700 bg-gradient-to-br from-emerald-900/40 to-emerald-950/40 backdrop-blur">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 md:pb-3">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-emerald-200">Completed</CardDescription>
-                <Trophy className="h-5 w-5 text-emerald-400" />
+                <CardDescription className="text-xs md:text-sm text-emerald-200">Completed</CardDescription>
+                <Trophy className="h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
               </div>
-              <CardTitle className="text-5xl font-bold text-white">{completed}</CardTitle>
+              <CardTitle className="text-2xl md:text-3xl lg:text-5xl font-bold text-white">{completed}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-emerald-300">Finished matches</p>
+            <CardContent className="pt-0">
+              <p className="text-xs md:text-sm text-emerald-300">Finished matches</p>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-700 bg-gradient-to-br from-purple-900/40 to-purple-950/40 backdrop-blur">
-            <CardHeader className="pb-3">
+          <Card className="border-slate-700 bg-gradient-to-br from-purple-900/40 to-purple-950/40 backdrop-blur lg:col-span-1 md:col-span-3 col-span-2">
+            <CardHeader className="pb-2 md:pb-3">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-purple-200">Total Matches</CardDescription>
-                <TrendingUp className="h-5 w-5 text-purple-400" />
+                <CardDescription className="text-xs md:text-sm text-purple-200">Total Matches</CardDescription>
+                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-purple-400" />
               </div>
-              <CardTitle className="text-5xl font-bold text-white">{totalMatches}</CardTitle>
+              <CardTitle className="text-2xl md:text-3xl lg:text-5xl font-bold text-white">{totalMatches}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-purple-300">All fixtures</p>
+            <CardContent className="pt-0">
+              <p className="text-xs md:text-sm text-purple-300">All fixtures</p>
             </CardContent>
           </Card>
         </div>
@@ -184,8 +241,9 @@ export default async function AdminDashboard() {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
+            <CardContent className="p-3 md:p-6">
+              <div className="overflow-x-auto -mx-3 md:mx-0">
+                <div className="min-w-[600px]">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-700">
@@ -245,6 +303,7 @@ export default async function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -258,10 +317,10 @@ export default async function AdminDashboard() {
                 <CardTitle className="text-white">Next Match</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between rounded-lg bg-slate-900/50 p-6">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-lg bg-slate-900/50 p-4 md:p-6">
                 <div className="space-y-2">
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">
                     {upcomingMatches.home_team?.name} vs {upcomingMatches.away_team?.name}
                   </p>
                   <p className="text-slate-400">
@@ -368,8 +427,8 @@ export default async function AdminDashboard() {
         ) : null}
 
         <div>
-          <h2 className="mb-4 text-2xl font-bold text-white">Quick Actions</h2>
-          <div className="grid gap-6 md:grid-cols-4">
+          <h2 className="mb-4 text-xl md:text-2xl font-bold text-white">Quick Actions</h2>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <Link href="/admin/teams" className="group">
               <Card className="cursor-pointer border-slate-700 bg-slate-800/50 backdrop-blur transition-all hover:scale-105 hover:border-blue-500 hover:bg-slate-800">
                 <CardHeader>

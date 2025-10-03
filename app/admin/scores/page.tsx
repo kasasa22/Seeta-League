@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { EnhancedScoreEntry } from "@/components/admin/enhanced-score-entry"
+import { ScoreEntryList } from "@/components/admin/score-entry-list"
 import { ArrowLeft, Trophy } from "lucide-react"
 
 export default async function ScoresPage() {
@@ -41,7 +41,7 @@ export default async function ScoresPage() {
           </CardHeader>
           <CardContent>
             {matches && matches.length > 0 ? (
-              <EnhancedScoreEntry matches={matches} />
+              <ScoreEntryList matches={matches} />
             ) : (
               <p className="py-8 text-center text-slate-400">No pending matches to update</p>
             )}

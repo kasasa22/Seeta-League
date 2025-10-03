@@ -42,8 +42,8 @@ export default function AdminLogin() {
 
         // Use window.location for more reliable navigation
         setTimeout(() => {
-          console.log('Navigating to admin test page...') // Debug log
-          window.location.href = '/admin/test'
+          console.log('Navigating to admin dashboard...') // Debug log
+          window.location.href = '/admin'
         }, 1000)
       } else {
         setError('Invalid email or password')
