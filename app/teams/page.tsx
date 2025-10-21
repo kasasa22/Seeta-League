@@ -20,7 +20,7 @@ export default async function TeamsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="relative h-[300px] overflow-hidden">
+      <div className="relative h-[250px] sm:h-[300px] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900">
           <img
             src="/football-teams-lineup-group.jpg"
@@ -28,28 +28,28 @@ export default async function TeamsPage() {
             className="h-full w-full object-cover opacity-20 mix-blend-overlay"
           />
         </div>
-        <div className="relative z-10 flex h-full flex-col justify-end px-6 pb-8 text-white">
+        <div className="relative z-10 flex h-full flex-col justify-end px-4 sm:px-6 pb-6 sm:pb-8 text-white">
           <div className="mx-auto w-full max-w-7xl">
             <Link href="/">
-              <Button variant="ghost" className="mb-4 text-white hover:bg-white/20">
+              <Button variant="ghost" size="sm" className="mb-3 sm:mb-4 text-white hover:bg-white/20">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Home
+                <span className="text-sm sm:text-base">Back to Home</span>
               </Button>
             </Link>
-            <div className="flex items-center gap-3">
-              <Users className="h-10 w-10 text-accent" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Users className="h-8 w-8 sm:h-10 sm:w-10 text-accent" />
               <div>
-                <h1 className="text-5xl font-black tracking-tight">Teams</h1>
-                <p className="mt-1 text-lg text-white/90">{teamsWithStats?.length || 0} registered teams</p>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight">Teams</h1>
+                <p className="mt-1 text-sm sm:text-base md:text-lg text-white/90">{teamsWithStats?.length || 0} registered teams</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
         {teamsWithStats && teamsWithStats.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {teamsWithStats.map((team, index) => (
               <Card
                 key={team.id}
@@ -67,10 +67,10 @@ export default async function TeamsPage() {
                     </Badge>
                   )}
                 </div>
-                <CardContent className="p-6">
-                  <h3 className="mb-4 text-2xl font-black">{team.name}</h3>
+                <CardContent className="p-4 sm:p-6">
+                  <h3 className="mb-4 text-xl sm:text-2xl font-black">{team.name}</h3>
                   {team.stats ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       <div className="flex items-center justify-between rounded-lg bg-accent/20 p-3">
                         <div className="flex items-center gap-2">
                           <Trophy className="h-4 w-4 text-accent" />
