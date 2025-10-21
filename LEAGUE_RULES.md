@@ -11,9 +11,9 @@
 
 ## 💰 Fees & Payments
 
-### Player Fees
-- **UGX 8,000** per player, per game day
-- Payment required before each match day
+### Team Fees
+- **UGX 100,000** per team, per game week
+- Payment required before each match week
 
 ### Team Commitment Fee
 - **UGX 50,000** per team (one-time payment)

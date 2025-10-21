@@ -137,7 +137,7 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
         .eq("match_id", match.id)
 
       // Insert goal events
-      const events = []
+  const events: Array<Record<string, any>> = []
 
       // Home team goals
       matchGoals.home.forEach(goal => {

@@ -124,6 +124,12 @@ export default async function HomePage() {
                   <span className="hidden sm:inline">Teams</span>
                 </Button>
               </Link>
+              <Link href="/rules">
+                <Button variant="ghost" size="sm" className="font-semibold hover:bg-accent/20 hover:text-accent px-2 sm:px-4">
+                  <Bell className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Rules</span>
+                </Button>
+              </Link>
             </div>
             <Link href="/admin">
               <Button
@@ -206,8 +212,8 @@ export default async function HomePage() {
                     <h3 className="text-lg sm:text-xl font-black mb-3">Fees & Payments</h3>
                     <div className="space-y-2 text-sm sm:text-base">
                       <div className="flex items-center justify-between p-2 rounded bg-muted/50">
-                        <span className="text-muted-foreground">Player Fee (per game day)</span>
-                        <span className="font-bold text-blue-400">UGX 8,000</span>
+                        <span className="text-muted-foreground">Team Fee (per game week)</span>
+                        <span className="font-bold text-blue-400">UGX 100,000</span>
                       </div>
                       <div className="flex items-center justify-between p-2 rounded bg-muted/50">
                         <span className="text-muted-foreground">Team Commitment Fee</span>

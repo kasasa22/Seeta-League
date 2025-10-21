@@ -26,25 +26,26 @@ export default function AdminLogin() {
     const SUPER_ADMIN_PASSWORD = 'Kasasa@2022'
 
     try {
-      if (email === SUPER_ADMIN_EMAIL && password === SUPER_ADMIN_PASSWORD) {
-        // Set admin session in both localStorage and cookies
+      // Call server API to set server-side admin cookie
+      const resp = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+
+      const result = await resp.json()
+      if (resp.ok && result.ok) {
         const sessionData = {
           email: SUPER_ADMIN_EMAIL,
           name: 'Kasasa Trevor',
           role: 'super_admin',
           loginTime: new Date().toISOString()
         }
-
         localStorage.setItem('admin_session', JSON.stringify(sessionData))
-        console.log('Session stored:', sessionData) // Debug log
-
         toast.success('Welcome back, Kasasa Trevor!')
-
-        // Use window.location for more reliable navigation
         setTimeout(() => {
-          console.log('Navigating to admin dashboard...') // Debug log
           window.location.href = '/admin'
-        }, 1000)
+        }, 800)
       } else {
         setError('Invalid email or password')
         toast.error('Invalid credentials')
