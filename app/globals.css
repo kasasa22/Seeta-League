@@ -120,4 +120,37 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  @media (max-width: 640px) {
+    html {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+    
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    input,
+    textarea,
+    button,
+    select {
+      font-size: 16px;
+    }
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: oklch(0.25 0.015 240);
+    border-radius: 3px;
+  }
 }
