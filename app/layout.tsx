@@ -6,9 +6,10 @@ import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Seeta League - School Football Championship',
+  description: 'Official Seeta League football championship platform with live scores, standings, and fixtures',
   generator: 'v0.app',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
 }
 
 export default function RootLayout({
