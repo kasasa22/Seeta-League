@@ -58,19 +58,19 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4 sm:p-6">
       <Card className="w-full max-w-md border-slate-700 bg-slate-800/50 backdrop-blur">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 rounded-lg bg-emerald-500 p-3 w-fit">
-            <Trophy className="h-8 w-8 text-white" />
+        <CardHeader className="text-center p-4 sm:p-6">
+          <div className="mx-auto mb-3 sm:mb-4 rounded-lg bg-emerald-500 p-2 sm:p-3 w-fit">
+            <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold text-white">Admin Login</CardTitle>
-          <CardDescription className="text-slate-300">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-white">Admin Login</CardTitle>
+          <CardDescription className="text-sm sm:text-base text-slate-300">
             Enter your credentials to access the admin dashboard
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+        <CardContent className="p-4 sm:p-6">
+          <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-white">Email</Label>
               <Input
