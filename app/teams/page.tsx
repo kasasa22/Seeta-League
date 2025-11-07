@@ -18,6 +18,24 @@ export default async function TeamsPage() {
     return { ...team, stats }
   })
 
+  const teamImages: Record<string, string> = {
+    "godfather's": "/teams/godfathers.png",
+    titans: "/teams/titans.png",
+    "finest brothers": "/teams/finest.png",
+    raptors: "/teams/raptors.png",
+    "covid boys": "/teams/covid_boys.png",
+    "top bins": "/teams/topbins.png",
+    ronavics: "/teams/ronavics.png",
+    "super strikers": "/teams/superstrikers.png",
+    "losti city": "/teams/losti_city.png",
+    "club de chege": "/teams/club_de_shege.png",
+  }
+
+  const getTeamImage = (name: string) => {
+    const key = name.toLowerCase()
+    return teamImages[key] || `/football-team-.jpg?key=pqr40&height=300&width=400&query=football+team+${encodeURIComponent(name)}+players`
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="relative h-[250px] sm:h-[300px] overflow-hidden">
@@ -50,78 +68,81 @@ export default async function TeamsPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
         {teamsWithStats && teamsWithStats.length > 0 ? (
           <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {teamsWithStats.map((team, index) => (
-              <Card
-                key={team.id}
-                className="group overflow-hidden transition-all hover:shadow-lg hover:border-accent/50"
-              >
-                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-accent/20 to-accent/5">
-                  <img
-                    src={`/football-team-.jpg?key=pqr40&height=300&width=400&query=football+team+${team.name}+players`}
-                    alt={team.name}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                  />
-                  {team.stats && (
-                    <Badge className="absolute right-4 top-4 bg-card text-card-foreground font-bold">
-                      #{standings?.findIndex((s) => s.id === team.id)! + 1}
-                    </Badge>
-                  )}
-                </div>
-                <CardContent className="p-4 sm:p-6">
-                  <h3 className="mb-4 text-xl sm:text-2xl font-black">{team.name}</h3>
-                  {team.stats ? (
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className="flex items-center justify-between rounded-lg bg-accent/20 p-3">
-                        <div className="flex items-center gap-2">
-                          <Trophy className="h-4 w-4 text-accent" />
-                          <span className="font-semibold">Points</span>
-                        </div>
-                        <span className="text-2xl font-black text-accent">{team.stats.points}</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="rounded-lg bg-muted p-2">
-                          <p className="text-2xl font-black text-accent">{team.stats.won}</p>
-                          <p className="text-xs text-muted-foreground">Won</p>
-                        </div>
-                        <div className="rounded-lg bg-muted p-2">
-                          <p className="text-2xl font-black">{team.stats.drawn}</p>
-                          <p className="text-xs text-muted-foreground">Drawn</p>
-                        </div>
-                        <div className="rounded-lg bg-muted p-2">
-                          <p className="text-2xl font-black">{team.stats.lost}</p>
-                          <p className="text-xs text-muted-foreground">Lost</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Goals Scored</span>
-                        <span className="font-bold">{team.stats.goals_for}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Goal Difference</span>
-                        <span
-                          className={`font-bold ${team.stats.goal_difference > 0 ? "text-accent" : team.stats.goal_difference < 0 ? "text-destructive" : ""}`}
-                        >
-                          {team.stats.goal_difference > 0 ? "+" : ""}
-                          {team.stats.goal_difference}
-                        </span>
-                      </div>
+            {teamsWithStats.map((team) => {
+              const position = standings?.findIndex((s) => s.id === team.id)
+
+              return (
+                <Link key={team.id} href={`/teams/${team.id}`} className="group block">
+                  <Card className="h-full overflow-hidden transition-all hover:shadow-lg hover:border-accent/50">
+                    <div className="relative h-48 overflow-hidden bg-gradient-to-br from-accent/20 to-accent/5">
+                      <img
+                        src={getTeamImage(team.name)}
+                        alt={team.name}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                      {team.stats && position !== undefined && position >= 0 && (
+                        <Badge className="absolute right-4 top-4 bg-card text-card-foreground font-bold">
+                          #{position + 1}
+                        </Badge>
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex h-32 items-center justify-center rounded-lg bg-muted">
-                      <p className="text-sm text-muted-foreground">No matches played yet</p>
-                    </div>
-                  )}
-                  {team.representative_name && (
-                    <div className="mt-4 border-t border-border pt-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Representative
-                      </p>
-                      <p className="mt-1 font-semibold">{team.representative_name}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    <CardContent className="p-4 sm:p-6">
+                      <h3 className="mb-4 text-xl sm:text-2xl font-black">{team.name}</h3>
+                      {team.stats ? (
+                        <div className="space-y-2 sm:space-y-3">
+                          <div className="flex items-center justify-between rounded-lg bg-accent/20 p-3">
+                            <div className="flex items-center gap-2">
+                              <Trophy className="h-4 w-4 text-accent" />
+                              <span className="font-semibold">Points</span>
+                            </div>
+                            <span className="text-2xl font-black text-accent">{team.stats.points}</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="rounded-lg bg-muted p-2">
+                              <p className="text-2xl font-black text-accent">{team.stats.won}</p>
+                              <p className="text-xs text-muted-foreground">Won</p>
+                            </div>
+                            <div className="rounded-lg bg-muted p-2">
+                              <p className="text-2xl font-black">{team.stats.drawn}</p>
+                              <p className="text-xs text-muted-foreground">Drawn</p>
+                            </div>
+                            <div className="rounded-lg bg-muted p-2">
+                              <p className="text-2xl font-black">{team.stats.lost}</p>
+                              <p className="text-xs text-muted-foreground">Lost</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Goals Scored</span>
+                            <span className="font-bold">{team.stats.goals_for}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Goal Difference</span>
+                            <span
+                              className={`font-bold ${team.stats.goal_difference > 0 ? "text-accent" : team.stats.goal_difference < 0 ? "text-destructive" : ""}`}
+                            >
+                              {team.stats.goal_difference > 0 ? "+" : ""}
+                              {team.stats.goal_difference}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex h-32 items-center justify-center rounded-lg bg-muted">
+                          <p className="text-sm text-muted-foreground">No matches played yet</p>
+                        </div>
+                      )}
+                      {team.representative_name && (
+                        <div className="mt-4 border-t border-border pt-4">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Representative
+                          </p>
+                          <p className="mt-1 font-semibold">{team.representative_name}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         ) : (
           <Card>

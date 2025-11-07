@@ -4,20 +4,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { ArrowLeft, Calendar, Clock } from "lucide-react"
+import { ArrowLeft, Calendar } from "lucide-react"
+import { MatchSection } from "@/components/fixtures/match-section"
 
 export default async function FixturesPage() {
   const supabase = await createClient()
 
   const { data: fixtures } = await supabase
     .from("matches")
-    .select("*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)")
+    .select(
+      "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
+    )
     .eq("is_completed", false)
     .order("match_date", { ascending: true })
 
   const { data: results } = await supabase
     .from("matches")
-    .select("*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)")
+    .select(
+      "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
+    )
     .eq("is_completed", true)
     .order("match_date", { ascending: false })
 
@@ -63,64 +68,7 @@ export default async function FixturesPage() {
 
           <TabsContent value="fixtures">
             {fixtures && fixtures.length > 0 ? (
-              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                {fixtures.map((match) => (
-                  <Card
-                    key={match.id}
-                    className="group overflow-hidden transition-all hover:shadow-lg hover:border-accent/50"
-                  >
-                    <div className="relative h-40 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-                      <img
-                        src="/football-stadium-empty-pitch.jpg"
-                        alt="Stadium"
-                        className="h-full w-full object-cover opacity-60 transition-transform group-hover:scale-105"
-                      />
-                      <Badge className="absolute left-4 top-4 bg-accent text-accent-foreground font-bold">
-                        Match Day {match.match_day}
-                      </Badge>
-                    </div>
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="mb-4 flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1 sm:gap-2">
-                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="font-medium">
-                            {new Date(match.match_date).toLocaleDateString("en-US", {
-                              weekday: "long",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </span>
-                        </div>
-                        {match.match_time && (
-                          <>
-                            <span className="hidden sm:inline">•</span>
-                            <div className="flex items-center gap-1 sm:gap-2">
-                              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                              <span className="font-medium">{match.match_time}</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between gap-2 sm:gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base sm:text-xl font-black truncate">{match.home_team?.name}</p>
-                        </div>
-                        <div className="px-2 sm:px-6 text-center flex-shrink-0">
-                          <p className="text-xl sm:text-2xl font-black text-muted-foreground">VS</p>
-                        </div>
-                        <div className="flex-1 text-right min-w-0">
-                          <p className="text-base sm:text-xl font-black truncate">{match.away_team?.name}</p>
-                        </div>
-                      </div>
-                      {match.venue && (
-                        <div className="mt-4 rounded-md bg-muted px-3 py-2 text-xs sm:text-sm">
-                          <span className="font-semibold">Venue:</span> {match.venue}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <MatchSection matches={fixtures} type="fixtures" />
             ) : (
               <Card>
                 <CardContent className="flex h-64 items-center justify-center text-muted-foreground">
@@ -132,55 +80,7 @@ export default async function FixturesPage() {
 
           <TabsContent value="results">
             {results && results.length > 0 ? (
-              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                {results.map((match) => (
-                  <Card
-                    key={match.id}
-                    className="group overflow-hidden transition-all hover:shadow-lg hover:border-accent/50"
-                  >
-                    <div className="relative h-40 overflow-hidden bg-gradient-to-br from-accent/20 to-accent/5">
-                      <img
-                        src="/football-match-celebration-action.jpg"
-                        alt="Match"
-                        className="h-full w-full object-cover opacity-50 transition-transform group-hover:scale-105"
-                      />
-                      <Badge className="absolute left-4 top-4 bg-card text-card-foreground font-bold">
-                        Match Day {match.match_day}
-                      </Badge>
-                      <Badge className="absolute right-4 top-4 bg-accent text-accent-foreground font-bold">
-                        Full Time
-                      </Badge>
-                    </div>
-                    <CardContent className="p-4 sm:p-6">
-                      <p className="mb-4 text-xs sm:text-sm font-medium text-muted-foreground">
-                        {new Date(match.match_date).toLocaleDateString("en-US", {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </p>
-                      <div className="flex items-center justify-between gap-2 sm:gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base sm:text-xl font-black truncate">{match.home_team?.name}</p>
-                        </div>
-                        <div className="px-2 sm:px-6 text-center flex-shrink-0">
-                          <p className="text-2xl sm:text-3xl md:text-4xl font-black text-accent whitespace-nowrap">
-                            {match.home_score} - {match.away_score}
-                          </p>
-                        </div>
-                        <div className="flex-1 text-right min-w-0">
-                          <p className="text-base sm:text-xl font-black truncate">{match.away_team?.name}</p>
-                        </div>
-                      </div>
-                      {match.venue && (
-                        <div className="mt-4 rounded-md bg-muted px-3 py-2 text-xs sm:text-sm">
-                          <span className="font-semibold">Venue:</span> {match.venue}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <MatchSection matches={results} type="results" />
             ) : (
               <Card>
                 <CardContent className="flex h-64 items-center justify-center text-muted-foreground">
@@ -194,3 +94,4 @@ export default async function FixturesPage() {
     </div>
   )
 }
+

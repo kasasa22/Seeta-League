@@ -8,6 +8,7 @@ import { Trash2, Calendar, Trophy } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { EditMatchDialog } from "@/components/admin/edit-match-dialog"
 
 export function MatchesList({ matches }: { matches: Match[] }) {
   const router = useRouter()
@@ -83,15 +84,18 @@ export function MatchesList({ matches }: { matches: Match[] }) {
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(match.id)}
-                  disabled={deleting === match.id}
-                  className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center justify-end gap-2">
+                  {match.is_completed && <EditMatchDialog match={match} />}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(match.id)}
+                    disabled={deleting === match.id}
+                    className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

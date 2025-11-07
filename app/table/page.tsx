@@ -65,6 +65,24 @@ export default async function TablePage() {
     console.log("Top assists view not available yet")
   }
 
+  const teamImages: Record<string, string> = {
+    "godfather's": "/teams/godfathers.png",
+    titans: "/teams/titans.png",
+    "finest brothers": "/teams/finest.png",
+    raptors: "/teams/raptors.png",
+    "covid boys": "/teams/covid_boys.png",
+    "top bins": "/teams/topbins.png",
+    ronavics: "/teams/ronavics.png",
+    "super strikers": "/teams/superstrikers.png",
+    "losti city": "/teams/losti_city.png",
+    "club de chege": "/teams/club_de_shege.png",
+  }
+
+  const getTeamImage = (name: string) => {
+    const key = name.toLowerCase()
+    return teamImages[key] || `/football-team-logo-.jpg?height=40&width=40&query=${encodeURIComponent(name)}+football+logo`
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -135,7 +153,7 @@ export default async function TablePage() {
                           <div className="flex items-center gap-2 sm:gap-3">
                             <div className="h-8 w-8 sm:h-10 sm:w-10 overflow-hidden rounded-md bg-muted flex-shrink-0">
                               <img
-                                src={`/football-team-logo-.jpg?height=40&width=40&query=football+team+logo+${team.team_name}`}
+                                src={getTeamImage(team.team_name)}
                                 alt={team.team_name}
                                 className="h-full w-full object-cover"
                               />

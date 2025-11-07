@@ -39,6 +39,24 @@ export default async function HomePage() {
   // Get top scorer
   const topScorer = standings?.[0]
 
+  const teamImages: Record<string, string> = {
+    "godfather's": "/teams/godfathers.png",
+    titans: "/teams/titans.png",
+    "finest brothers": "/teams/finest.png",
+    raptors: "/teams/raptors.png",
+    "covid boys": "/teams/covid_boys.png",
+    "top bins": "/teams/topbins.png",
+    ronavics: "/teams/ronavics.png",
+    "super strikers": "/teams/superstrikers.png",
+    "losti city": "/teams/losti_city.png",
+    "club de chege": "/teams/club_de_shege.png",
+  }
+
+  const getTeamImage = (name: string) => {
+    const key = name.toLowerCase()
+    return teamImages[key] || `/football-team-.jpg?height=40&width=40&query=football+team+logo+${encodeURIComponent(name)}`
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -80,7 +98,7 @@ export default async function HomePage() {
               <p className="mt-1 text-xs sm:text-sm font-medium uppercase tracking-wide text-white/80">Goals</p>
             </div>
           </div>
-          <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 w-full max-w-md sm:max-w-none px-4 sm:px-0">
+          <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 w-full max-w-md sm:max-w-none px-4 sm:px-0 sm:justify-center sm:items-center sm:mx-auto">
             <Link href="/table" className="flex-1 sm:flex-none">
               <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold">
                 <Trophy className="mr-2 h-4 sm:h-5 w-4 sm:w-5" />
@@ -363,7 +381,16 @@ export default async function HomePage() {
                               {index === 0 && <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-accent" />}
                             </div>
                           </td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-sm">{team.team_name}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-sm">
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={getTeamImage(team.team_name)}
+                              alt={team.team_name}
+                              className="h-6 w-6 rounded-full object-cover"
+                            />
+                            <span>{team.team_name}</span>
+                          </div>
+                        </td>
                           <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-sm">{team.played}</td>
                           <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-accent text-sm">{team.won}</td>
                           <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-sm">{team.drawn}</td>
@@ -483,7 +510,7 @@ export default async function HomePage() {
           </div>
           {latestResults && latestResults.length > 0 ? (
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {latestResults.map((match) => (
+                    {latestResults.map((match) => (
                 <Card
                   key={match.id}
                   className="group overflow-hidden transition-all hover:shadow-lg hover:border-accent/50"
@@ -504,17 +531,31 @@ export default async function HomePage() {
                         year: "numeric",
                       })}
                     </p>
-                    <div className="flex items-center justify-between gap-2 sm:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm sm:text-lg font-bold truncate">{match.home_team?.name}</p>
-                      </div>
+                      <div className="flex items-center justify-between gap-2 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={match.home_team?.name ? getTeamImage(match.home_team.name) : "/placeholder.svg"}
+                              alt={match.home_team?.name ?? "Home team"}
+                              className="h-8 w-8 rounded-full object-cover"
+                            />
+                            <p className="text-sm sm:text-lg font-bold truncate">{match.home_team?.name}</p>
+                          </div>
+                        </div>
                       <div className="px-2 sm:px-6 text-center flex-shrink-0">
                         <p className="text-2xl sm:text-3xl font-black text-accent whitespace-nowrap">
                           {match.home_score} - {match.away_score}
                         </p>
                       </div>
-                      <div className="flex-1 text-right min-w-0">
-                        <p className="text-sm sm:text-lg font-bold truncate">{match.away_team?.name}</p>
+                        <div className="flex-1 text-right min-w-0">
+                          <div className="flex items-center justify-end gap-2">
+                            <p className="text-sm sm:text-lg font-bold truncate">{match.away_team?.name}</p>
+                            <img
+                              src={match.away_team?.name ? getTeamImage(match.away_team.name) : "/placeholder.svg"}
+                              alt={match.away_team?.name ?? "Away team"}
+                              className="h-8 w-8 rounded-full object-cover"
+                            />
+                          </div>
                       </div>
                     </div>
                   </CardContent>
@@ -572,13 +613,27 @@ export default async function HomePage() {
                     </p>
                     <div className="flex items-center justify-between gap-2 sm:gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm sm:text-lg font-bold truncate">{match.home_team?.name}</p>
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={match.home_team?.name ? getTeamImage(match.home_team.name) : "/placeholder.svg"}
+                            alt={match.home_team?.name ?? "Home team"}
+                            className="h-8 w-8 rounded-full object-cover"
+                          />
+                          <p className="text-sm sm:text-lg font-bold truncate">{match.home_team?.name}</p>
+                        </div>
                       </div>
                       <div className="px-2 sm:px-6 text-center flex-shrink-0">
                         <p className="text-xl sm:text-2xl font-black text-muted-foreground">VS</p>
                       </div>
                       <div className="flex-1 text-right min-w-0">
-                        <p className="text-sm sm:text-lg font-bold truncate">{match.away_team?.name}</p>
+                        <div className="flex items-center justify-end gap-2">
+                          <p className="text-sm sm:text-lg font-bold truncate">{match.away_team?.name}</p>
+                          <img
+                            src={match.away_team?.name ? getTeamImage(match.away_team.name) : "/placeholder.svg"}
+                            alt={match.away_team?.name ?? "Away team"}
+                            className="h-8 w-8 rounded-full object-cover"
+                          />
+                        </div>
                       </div>
                     </div>
                     {match.venue && (
