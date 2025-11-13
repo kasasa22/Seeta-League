@@ -17,6 +17,7 @@ export default async function FixturesPage() {
     )
     .eq("is_completed", false)
     .order("match_date", { ascending: true })
+    .order("match_time", { ascending: true, nullsFirst: false })
 
   const { data: results } = await supabase
     .from("matches")
@@ -25,6 +26,7 @@ export default async function FixturesPage() {
     )
     .eq("is_completed", true)
     .order("match_date", { ascending: false })
+    .order("match_time", { ascending: false, nullsFirst: true })
 
   return (
     <div className="min-h-screen bg-background">

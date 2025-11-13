@@ -151,6 +151,20 @@ function MatchCard({
         <div className="mb-4 flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
           <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
           <span className="font-medium">{dateLabel}</span>
+          {match.match_time && (
+            <>
+              <span className="text-muted-foreground/60">•</span>
+              <span className="font-medium">
+                {(() => {
+                  const [hours, minutes] = match.match_time.split(":")
+                  const hour = parseInt(hours, 10)
+                  const ampm = hour >= 12 ? "PM" : "AM"
+                  const displayHour = hour % 12 || 12
+                  return `${displayHour}:${minutes} ${ampm}`
+                })()}
+              </span>
+            </>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-2 sm:gap-4">

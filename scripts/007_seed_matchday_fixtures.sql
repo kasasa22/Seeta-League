@@ -13,6 +13,7 @@ DECLARE
   team_ids UUID[];
   team_names TEXT[];
   team_years INT[];
+  working_ids UUID[];
   n INT;
   match_day INT;
   game_index INT;
@@ -50,10 +51,10 @@ BEGIN
   END IF;
 
   -- If we have an odd number, append a virtual bye slot
+  working_ids := team_ids;
+
   IF n % 2 = 1 THEN
-    team_ids := team_ids || NULL;
-    team_names := team_names || NULL;
-    team_years := team_years || NULL;
+    working_ids := working_ids || NULL;
     n := n + 1;
   END IF;
 
@@ -61,8 +62,8 @@ BEGIN
     fixture_date := DATE '2025-11-16' + (match_day - 1) * INTERVAL '14 days';
 
     -- Determine the team that will play twice this match day
-    double_idx := ((match_day - 1) % COALESCE(array_length(team_ids, 1), 1)) + 1;
-    double_team := team_ids[double_idx];
+    double_idx := 1;
+    double_team := working_ids[double_idx];
 
     IF double_team IS NULL THEN
       CONTINUE;
@@ -70,9 +71,9 @@ BEGIN
 
     -- Build remaining list without the double team
     remaining_ids := ARRAY[]::UUID[];
-    FOR game_index IN 1..array_length(team_ids, 1) LOOP
-      IF team_ids[game_index] IS NOT NULL AND team_ids[game_index] <> double_team THEN
-        remaining_ids := remaining_ids || team_ids[game_index];
+    FOR game_index IN 2..n LOOP
+      IF working_ids[game_index] IS NOT NULL THEN
+        remaining_ids := remaining_ids || working_ids[game_index];
       END IF;
     END LOOP;
 
@@ -92,11 +93,11 @@ BEGIN
     END IF;
 
     -- Double team plays two matches (home then away for fairness)
-    INSERT INTO matches (match_day, match_date, venue, home_team_id, away_team_id, is_completed)
-    VALUES (match_day, fixture_date, 'Equinox Sports & Fitness Center', double_team, first_opponent, FALSE);
+    INSERT INTO matches (match_day, match_date, match_time, venue, home_team_id, away_team_id, is_completed)
+    VALUES (match_day, fixture_date, '14:00:00', 'Equinox Sports & Fitness Center', double_team, first_opponent, FALSE);
 
-    INSERT INTO matches (match_day, match_date, venue, home_team_id, away_team_id, is_completed)
-    VALUES (match_day, fixture_date, 'Equinox Sports & Fitness Center', second_opponent, double_team, FALSE);
+    INSERT INTO matches (match_day, match_date, match_time, venue, home_team_id, away_team_id, is_completed)
+    VALUES (match_day, fixture_date, '16:00:00', 'Equinox Sports & Fitness Center', second_opponent, double_team, FALSE);
 
     -- Pair remaining teams from both ends towards the middle
     left_idx := 1;
@@ -106,12 +107,15 @@ BEGIN
       home_id := remaining_ids[left_idx];
       away_id := remaining_ids[right_idx];
 
-      INSERT INTO matches (match_day, match_date, venue, home_team_id, away_team_id, is_completed)
-      VALUES (match_day, fixture_date, 'Equinox Sports & Fitness Center', home_id, away_id, FALSE);
+      INSERT INTO matches (match_day, match_date, match_time, venue, home_team_id, away_team_id, is_completed)
+      VALUES (match_day, fixture_date, '14:00:00', 'Equinox Sports & Fitness Center', home_id, away_id, FALSE);
 
       left_idx := left_idx + 1;
       right_idx := right_idx - 1;
     END LOOP;
+
+    -- rotate working_ids for next match day (exclude null placeholder)
+    working_ids := working_ids[2:n] || working_ids[1];
   END LOOP;
 END $$;
 
