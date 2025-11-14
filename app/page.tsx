@@ -39,6 +39,30 @@ export default async function HomePage() {
   // Get top scorer
   const topScorer = standings?.[0]
 
+  // Get top scorers and assists
+  let topScorers = null
+  let topAssists = null
+
+  try {
+    const { data: scorersData } = await supabase
+      .from("top_scorers")
+      .select("*")
+      .limit(5)
+    topScorers = scorersData
+  } catch (error) {
+    console.log("Top scorers view not available yet")
+  }
+
+  try {
+    const { data: assistsData } = await supabase
+      .from("top_assists")
+      .select("*")
+      .limit(5)
+    topAssists = assistsData
+  } catch (error) {
+    console.log("Top assists view not available yet")
+  }
+
   const teamImages: Record<string, string> = {
     "godfather's": "/teams/godfathers.png",
     titans: "/teams/titans.png",
@@ -412,6 +436,108 @@ export default async function HomePage() {
             </Card>
           </div>
         )}
+
+        {/* Player Statistics */}
+        {(topScorers && topScorers.length > 0) || (topAssists && topAssists.length > 0) ? (
+          <div className="mb-12 sm:mb-16">
+            <div className="mb-6 sm:mb-8 flex items-center gap-3">
+              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Player Statistics</h2>
+                <p className="mt-1 text-sm sm:text-base text-muted-foreground">Top performers this season</p>
+              </div>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Top Scorers */}
+              {topScorers && topScorers.length > 0 && (
+                <Card className="overflow-hidden border-accent/30">
+                  <CardContent className="p-0">
+                    <div className="bg-emerald-500 p-4">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-5 w-5 text-white" />
+                        <h3 className="text-xl font-bold text-white">Top Scorers</h3>
+                      </div>
+                      <p className="text-emerald-100 text-sm mt-1">Leading goal scorers this season</p>
+                    </div>
+                    <div className="p-4">
+                      <div className="space-y-3">
+                        {topScorers.map((scorer, index) => (
+                          <div key={scorer.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
+                                index === 0 ? "bg-emerald-500/20 text-emerald-600" :
+                                index === 1 ? "bg-slate-500/20 text-slate-600" :
+                                index === 2 ? "bg-amber-700/20 text-amber-700" :
+                                "bg-muted text-muted-foreground"
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <div>
+                                <p className="font-semibold">
+                                  {scorer.player_name}
+                                  {scorer.jersey_number && <span className="text-muted-foreground ml-1">#{scorer.jersey_number}</span>}
+                                </p>
+                                <p className="text-sm text-muted-foreground">{scorer.team_name}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-emerald-600 text-lg">{scorer.goals || 0}</p>
+                              <p className="text-xs text-muted-foreground">goals</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Top Assists */}
+              {topAssists && topAssists.length > 0 && (
+                <Card className="overflow-hidden border-accent/30">
+                  <CardContent className="p-0">
+                    <div className="bg-blue-500 p-4">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-white" />
+                        <h3 className="text-xl font-bold text-white">Top Assists</h3>
+                      </div>
+                      <p className="text-blue-100 text-sm mt-1">Leading assist providers this season</p>
+                    </div>
+                    <div className="p-4">
+                      <div className="space-y-3">
+                        {topAssists.map((assist, index) => (
+                          <div key={assist.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
+                                index === 0 ? "bg-blue-500/20 text-blue-600" :
+                                index === 1 ? "bg-slate-500/20 text-slate-600" :
+                                index === 2 ? "bg-amber-700/20 text-amber-700" :
+                                "bg-muted text-muted-foreground"
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <div>
+                                <p className="font-semibold">
+                                  {assist.player_name}
+                                  {assist.jersey_number && <span className="text-muted-foreground ml-1">#{assist.jersey_number}</span>}
+                                </p>
+                                <p className="text-sm text-muted-foreground">{assist.team_name}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-blue-600 text-lg">{assist.assists || 0}</p>
+                              <p className="text-xs text-muted-foreground">assists</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         {/* News Section */}
         <div className="mb-12 sm:mb-16">
