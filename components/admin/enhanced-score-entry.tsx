@@ -6,72 +6,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
-import { Trophy, Calendar, Plus, X, Target, Users, AlertCircle } from "lucide-react"
-
-interface Player {
-  id: string
-  name: string
-  jersey_number: number | null
-  team_id: string
-}
+import { useState } from "react"
+import { Trophy, Calendar, X, Target } from "lucide-react"
 
 interface GoalEvent {
-  player_id: string
-  minute: number
-  assist_player_id?: string
+  scorer: string
+  assist?: string
 }
 
 export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
   const router = useRouter()
   const [updating, setUpdating] = useState<string | null>(null)
-  const [players, setPlayers] = useState<{ [teamId: string]: Player[] }>({})
   const [goals, setGoals] = useState<{ [matchId: string]: { home: GoalEvent[], away: GoalEvent[] } }>({})
 
-  useEffect(() => {
-    // Load players for all teams in matches
-    const loadPlayers = async () => {
-      const supabase = createClient()
-      const teamIds = new Set<string>()
-
-      matches.forEach(match => {
-        if (match.home_team_id) teamIds.add(match.home_team_id)
-        if (match.away_team_id) teamIds.add(match.away_team_id)
-      })
-
-      const { data: playersData } = await supabase
-        .from('players')
-        .select('id, name, jersey_number, team_id')
-        .in('team_id', Array.from(teamIds))
-        .eq('is_active', true)
-        .order('jersey_number')
-
-      if (playersData) {
-        const playersByTeam: { [teamId: string]: Player[] } = {}
-        playersData.forEach(player => {
-          if (!playersByTeam[player.team_id]) {
-            playersByTeam[player.team_id] = []
-          }
-          playersByTeam[player.team_id].push(player)
-        })
-        setPlayers(playersByTeam)
-      }
-    }
-
-    loadPlayers()
-  }, [matches])
 
   const addGoal = (matchId: string, team: 'home' | 'away') => {
     setGoals(prev => ({
       ...prev,
       [matchId]: {
         ...prev[matchId],
-        [team]: [...(prev[matchId]?.[team] || []), { player_id: '', minute: 0 }]
+        [team]: [...(prev[matchId]?.[team] || []), { scorer: '' }]
       }
     }))
   }
@@ -86,7 +44,7 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
     }))
   }
 
-  const updateGoal = (matchId: string, team: 'home' | 'away', index: number, field: keyof GoalEvent, value: string | number) => {
+  const updateGoal = (matchId: string, team: 'home' | 'away', index: number, field: keyof GoalEvent, value: string) => {
     setGoals(prev => ({
       ...prev,
       [matchId]: {
@@ -107,92 +65,161 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
     const awayScore = Number.parseInt(formData.get("away_score") as string)
 
     const matchGoals = goals[match.id] || { home: [], away: [] }
+    const matchGoalsHome = matchGoals?.home || []
+    const matchGoalsAway = matchGoals?.away || []
 
     // Validate that number of goals matches the score
-    if (matchGoals.home.length !== homeScore || matchGoals.away.length !== awayScore) {
-      alert(`Goal details don't match the score. Home: ${homeScore} goals vs ${matchGoals.home.length} entries, Away: ${awayScore} goals vs ${matchGoals.away.length} entries`)
+    if (matchGoalsHome.length !== homeScore || matchGoalsAway.length !== awayScore) {
+      alert(`Goal details don't match the score. Home: ${homeScore} goals vs ${matchGoalsHome.length} entries, Away: ${awayScore} goals vs ${matchGoalsAway.length} entries`)
       setUpdating(null)
       return
     }
 
-    const supabase = createClient()
+      const supabase = createClient()
 
-    try {
-      // Update match score
-      const { error: matchError } = await supabase
-        .from("matches")
-        .update({
-          home_score: homeScore,
-          away_score: awayScore,
-          is_completed: true,
-        })
-        .eq("id", match.id)
-
-      if (matchError) throw matchError
-
-      // Clear existing match events for this match
-      await supabase
-        .from("match_events")
-        .delete()
-        .eq("match_id", match.id)
-
-      // Insert goal events
-  const events: Array<Record<string, any>> = []
-
-      // Home team goals
-      matchGoals.home.forEach(goal => {
-        if (goal.player_id) {
-          events.push({
-            match_id: match.id,
-            player_id: goal.player_id,
-            team_id: match.home_team_id,
-            event_type: 'goal',
-            minute: goal.minute || null
+      try {
+        // Update match score
+        const { error: matchError } = await supabase
+          .from("matches")
+          .update({
+            home_score: homeScore,
+            away_score: awayScore,
+            is_completed: true,
           })
+          .eq("id", match.id)
 
-          // Add assist if specified
-          if (goal.assist_player_id) {
+        if (matchError) throw matchError
+
+        // Clear existing match events for this match
+        await supabase
+          .from("match_events")
+          .delete()
+          .eq("match_id", match.id)
+
+      const events: Array<{
+        match_id: string
+        player_id: string
+        team_id: string
+        event_type: 'goal' | 'assist'
+        minute: number | null
+        description: string
+      }> = []
+
+      const getOrCreatePlayer = async (playerName: string, teamId: string): Promise<string | null> => {
+        if (!playerName?.trim()) return null
+
+        const trimmedName = playerName.trim()
+
+        const { data: existingPlayer, error: searchError } = await supabase
+          .from('players')
+          .select('id')
+          .eq('team_id', teamId)
+          .ilike('name', trimmedName)
+          .limit(1)
+          .maybeSingle()
+
+        if (searchError) {
+          console.error('Error searching for player:', searchError)
+        }
+
+        if (existingPlayer) {
+          return existingPlayer.id
+        }
+
+        const { data: newPlayer, error: insertError } = await supabase
+          .from('players')
+          .insert({
+            name: trimmedName,
+            team_id: teamId,
+            jersey_number: null,
+            position: null,
+            is_active: true
+          })
+          .select('id')
+          .single()
+
+        if (insertError) {
+          console.error('Error creating player:', insertError)
+          return null
+        }
+
+        return newPlayer?.id || null
+      }
+
+      for (const goal of matchGoalsHome) {
+        if (goal.scorer?.trim()) {
+          const scorerPlayerId = await getOrCreatePlayer(goal.scorer, match.home_team_id)
+          if (scorerPlayerId) {
             events.push({
-              match_id: match.id,
-              player_id: goal.assist_player_id,
-              team_id: match.home_team_id,
-              event_type: 'assist',
-              minute: goal.minute || null
+              match_id: String(match.id),
+              player_id: String(scorerPlayerId),
+              team_id: String(match.home_team_id),
+              event_type: 'goal' as const,
+              minute: null,
+              description: goal.scorer.trim()
             })
+
+            if (goal.assist?.trim()) {
+              const assistPlayerId = await getOrCreatePlayer(goal.assist, match.home_team_id)
+              if (assistPlayerId) {
+                events.push({
+                  match_id: String(match.id),
+                  player_id: String(assistPlayerId),
+                  team_id: String(match.home_team_id),
+                  event_type: 'assist' as const,
+                  minute: null,
+                  description: goal.assist.trim()
+                })
+              }
+            }
           }
         }
-      })
+      }
 
-      // Away team goals
-      matchGoals.away.forEach(goal => {
-        if (goal.player_id) {
-          events.push({
-            match_id: match.id,
-            player_id: goal.player_id,
-            team_id: match.away_team_id,
-            event_type: 'goal',
-            minute: goal.minute || null
-          })
-
-          // Add assist if specified
-          if (goal.assist_player_id) {
+      for (const goal of matchGoalsAway) {
+        if (goal.scorer?.trim()) {
+          const scorerPlayerId = await getOrCreatePlayer(goal.scorer, match.away_team_id)
+          if (scorerPlayerId) {
             events.push({
-              match_id: match.id,
-              player_id: goal.assist_player_id,
-              team_id: match.away_team_id,
-              event_type: 'assist',
-              minute: goal.minute || null
+              match_id: String(match.id),
+              player_id: String(scorerPlayerId),
+              team_id: String(match.away_team_id),
+              event_type: 'goal' as const,
+              minute: null,
+              description: goal.scorer.trim()
             })
+
+            if (goal.assist?.trim()) {
+              const assistPlayerId = await getOrCreatePlayer(goal.assist, match.away_team_id)
+              if (assistPlayerId) {
+                events.push({
+                  match_id: String(match.id),
+                  player_id: String(assistPlayerId),
+                  team_id: String(match.away_team_id),
+                  event_type: 'assist' as const,
+                  minute: null,
+                  description: goal.assist.trim()
+                })
+              }
+            }
           }
         }
-      })
+      }
 
       if (events.length > 0) {
-        const { error: eventsError } = await supabase
+        console.log('Inserting events:', JSON.stringify(events, null, 2))
+        const { data: insertedData, error: eventsError } = await supabase
           .from("match_events")
           .insert(events)
+          .select()
 
-        if (eventsError) throw eventsError
+        if (eventsError) {
+          console.error('Error inserting events:', eventsError)
+          throw eventsError
+        }
+        console.log('Successfully inserted events:', insertedData)
+      } else {
+        console.warn('No events to insert - check if teams have active players and goals have scorers')
       }
 
       router.refresh()
@@ -206,9 +233,9 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
   return (
     <div className="grid gap-6">
       {matches.map((match) => {
-        const homeTeamPlayers = players[match.home_team_id] || []
-        const awayTeamPlayers = players[match.away_team_id] || []
         const matchGoals = goals[match.id] || { home: [], away: [] }
+        const homeGoals = matchGoals?.home || []
+        const awayGoals = matchGoals?.away || []
 
         return (
           <Card key={match.id} className="border-slate-700 bg-slate-900/50">
@@ -239,10 +266,10 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
                       min="0"
                       required
                       placeholder="0"
-                      value={matchGoals.home.length}
+                      value={homeGoals.length}
                       onChange={(e) => {
                         const newScore = parseInt(e.target.value) || 0
-                        const currentGoals = matchGoals.home.length
+                        const currentGoals = homeGoals.length
 
                         if (newScore > currentGoals) {
                           // Add goals
@@ -274,10 +301,10 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
                       min="0"
                       required
                       placeholder="0"
-                      value={matchGoals.away.length}
+                      value={awayGoals.length}
                       onChange={(e) => {
                         const newScore = parseInt(e.target.value) || 0
-                        const currentGoals = matchGoals.away.length
+                        const currentGoals = awayGoals.length
 
                         if (newScore > currentGoals) {
                           // Add goals
@@ -301,19 +328,19 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
                 </div>
 
                 {/* Goal Details */}
-                {(matchGoals.home.length > 0 || matchGoals.away.length > 0) && (
+                {(homeGoals.length > 0 || awayGoals.length > 0) && (
                   <>
                     <Separator className="bg-slate-700" />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Home Team Goals */}
-                      {matchGoals.home.length > 0 && (
+                      {homeGoals.length > 0 && (
                         <div className="space-y-3">
                           <Label className="text-emerald-400 flex items-center gap-2">
                             <Target className="h-4 w-4" />
                             {match.home_team?.name} Goals
                           </Label>
-                          {matchGoals.home.map((goal, index) => (
+                          {homeGoals.map((goal, index) => (
                             <div key={index} className="space-y-2 p-3 rounded-lg bg-slate-800/50 border border-slate-700">
                               <div className="flex items-center justify-between">
                                 <Badge variant="outline" className="text-emerald-400">Goal {index + 1}</Badge>
@@ -327,56 +354,25 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
                                   <X className="h-3 w-3" />
                                 </Button>
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <Label className="text-xs text-slate-400">Scorer</Label>
-                                  <Select
-                                    value={goal.player_id}
-                                    onValueChange={(value) => updateGoal(match.id, 'home', index, 'player_id', value)}
-                                  >
-                                    <SelectTrigger className="border-slate-600 bg-slate-700">
-                                      <SelectValue placeholder="Select player" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {homeTeamPlayers.map(player => (
-                                        <SelectItem key={player.id} value={player.id}>
-                                          #{player.jersey_number} {player.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <Label className="text-xs text-slate-400">Minute</Label>
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    max="120"
-                                    value={goal.minute}
-                                    onChange={(e) => updateGoal(match.id, 'home', index, 'minute', parseInt(e.target.value) || 0)}
-                                    className="border-slate-600 bg-slate-700"
-                                    placeholder="90"
-                                  />
-                                </div>
+                              <div>
+                                <Label className="text-xs text-slate-400">Scorer</Label>
+                                <Input
+                                  type="text"
+                                  value={goal.scorer || ''}
+                                  onChange={(e) => updateGoal(match.id, 'home', index, 'scorer', e.target.value)}
+                                  className="border-slate-600 bg-slate-700"
+                                  placeholder="Enter scorer name"
+                                />
                               </div>
                               <div>
                                 <Label className="text-xs text-slate-400">Assist (optional)</Label>
-                                <Select
-                                  value={goal.assist_player_id || ''}
-                                  onValueChange={(value) => updateGoal(match.id, 'home', index, 'assist_player_id', value)}
-                                >
-                                  <SelectTrigger className="border-slate-600 bg-slate-700">
-                                    <SelectValue placeholder="Select assist player" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="">No assist</SelectItem>
-                                    {homeTeamPlayers.filter(p => p.id !== goal.player_id).map(player => (
-                                      <SelectItem key={player.id} value={player.id}>
-                                        #{player.jersey_number} {player.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <Input
+                                  type="text"
+                                  value={goal.assist || ''}
+                                  onChange={(e) => updateGoal(match.id, 'home', index, 'assist', e.target.value)}
+                                  className="border-slate-600 bg-slate-700"
+                                  placeholder="Enter assist player name"
+                                />
                               </div>
                             </div>
                           ))}
@@ -384,13 +380,13 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
                       )}
 
                       {/* Away Team Goals */}
-                      {matchGoals.away.length > 0 && (
+                      {awayGoals.length > 0 && (
                         <div className="space-y-3">
                           <Label className="text-blue-400 flex items-center gap-2">
                             <Target className="h-4 w-4" />
                             {match.away_team?.name} Goals
                           </Label>
-                          {matchGoals.away.map((goal, index) => (
+                          {awayGoals.map((goal, index) => (
                             <div key={index} className="space-y-2 p-3 rounded-lg bg-slate-800/50 border border-slate-700">
                               <div className="flex items-center justify-between">
                                 <Badge variant="outline" className="text-blue-400">Goal {index + 1}</Badge>
@@ -404,56 +400,25 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
                                   <X className="h-3 w-3" />
                                 </Button>
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <Label className="text-xs text-slate-400">Scorer</Label>
-                                  <Select
-                                    value={goal.player_id}
-                                    onValueChange={(value) => updateGoal(match.id, 'away', index, 'player_id', value)}
-                                  >
-                                    <SelectTrigger className="border-slate-600 bg-slate-700">
-                                      <SelectValue placeholder="Select player" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {awayTeamPlayers.map(player => (
-                                        <SelectItem key={player.id} value={player.id}>
-                                          #{player.jersey_number} {player.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <Label className="text-xs text-slate-400">Minute</Label>
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    max="120"
-                                    value={goal.minute}
-                                    onChange={(e) => updateGoal(match.id, 'away', index, 'minute', parseInt(e.target.value) || 0)}
-                                    className="border-slate-600 bg-slate-700"
-                                    placeholder="90"
-                                  />
-                                </div>
+                              <div>
+                                <Label className="text-xs text-slate-400">Scorer</Label>
+                                <Input
+                                  type="text"
+                                  value={goal.scorer || ''}
+                                  onChange={(e) => updateGoal(match.id, 'away', index, 'scorer', e.target.value)}
+                                  className="border-slate-600 bg-slate-700"
+                                  placeholder="Enter scorer name"
+                                />
                               </div>
                               <div>
                                 <Label className="text-xs text-slate-400">Assist (optional)</Label>
-                                <Select
-                                  value={goal.assist_player_id || ''}
-                                  onValueChange={(value) => updateGoal(match.id, 'away', index, 'assist_player_id', value)}
-                                >
-                                  <SelectTrigger className="border-slate-600 bg-slate-700">
-                                    <SelectValue placeholder="Select assist player" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="">No assist</SelectItem>
-                                    {awayTeamPlayers.filter(p => p.id !== goal.player_id).map(player => (
-                                      <SelectItem key={player.id} value={player.id}>
-                                        #{player.jersey_number} {player.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <Input
+                                  type="text"
+                                  value={goal.assist || ''}
+                                  onChange={(e) => updateGoal(match.id, 'away', index, 'assist', e.target.value)}
+                                  className="border-slate-600 bg-slate-700"
+                                  placeholder="Enter assist player name"
+                                />
                               </div>
                             </div>
                           ))}
