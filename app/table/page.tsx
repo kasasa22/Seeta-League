@@ -49,7 +49,7 @@ export default async function TablePage() {
     const { data: scorersData } = await supabase
       .from("top_scorers")
       .select("*")
-      .limit(10)
+      .limit(5)
     topScorers = scorersData
   } catch (error) {
     console.log("Top scorers view not available yet")
@@ -59,7 +59,7 @@ export default async function TablePage() {
     const { data: assistsData } = await supabase
       .from("top_assists")
       .select("*")
-      .limit(10)
+      .limit(5)
     topAssists = assistsData
   } catch (error) {
     console.log("Top assists view not available yet")
@@ -257,13 +257,13 @@ export default async function TablePage() {
         </div>
 
         {/* Player Statistics */}
-        {(topScorers && topScorers.length > 0 && topScorers.some(s => s.goals > 0)) || (topAssists && topAssists.length > 0 && topAssists.some(a => a.assists > 0)) ? (
+        {(topScorers && topScorers.length > 0) || (topAssists && topAssists.length > 0) ? (
           <div className="mt-12 grid gap-6 md:grid-cols-2">
             {/* Top Scorers */}
-            {topScorers && topScorers.length > 0 && topScorers.some(s => s.goals > 0) && (
+            {topScorers && topScorers.length > 0 && (
               <Card className="overflow-hidden border-accent/30">
                 <CardContent className="p-0">
-                  <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-4">
+                  <div className="bg-emerald-500 p-4">
                     <div className="flex items-center gap-2">
                       <Target className="h-5 w-5 text-white" />
                       <h3 className="text-xl font-bold text-white">Top Scorers</h3>
@@ -272,7 +272,7 @@ export default async function TablePage() {
                   </div>
                   <div className="p-4">
                     <div className="space-y-3">
-                      {topScorers.filter(s => s.goals > 0).map((scorer, index) => (
+                      {topScorers.map((scorer, index) => (
                         <div key={scorer.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
                           <div className="flex items-center gap-3">
                             <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
@@ -289,11 +289,10 @@ export default async function TablePage() {
                                 {scorer.jersey_number && <span className="text-muted-foreground ml-1">#{scorer.jersey_number}</span>}
                               </p>
                               <p className="text-sm text-muted-foreground">{scorer.team_name}</p>
-                              {scorer.position && <p className="text-xs text-muted-foreground">{scorer.position}</p>}
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-emerald-600 text-lg">{scorer.goals}</p>
+                            <p className="font-bold text-emerald-600 text-lg">{scorer.goals || 0}</p>
                             <p className="text-xs text-muted-foreground">goals</p>
                           </div>
                         </div>
@@ -305,10 +304,10 @@ export default async function TablePage() {
             )}
 
             {/* Top Assists */}
-            {topAssists && topAssists.length > 0 && topAssists.some(a => a.assists > 0) && (
+            {topAssists && topAssists.length > 0 && (
               <Card className="overflow-hidden border-accent/30">
                 <CardContent className="p-0">
-                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4">
+                  <div className="bg-blue-500 p-4">
                     <div className="flex items-center gap-2">
                       <Users className="h-5 w-5 text-white" />
                       <h3 className="text-xl font-bold text-white">Top Assists</h3>
@@ -317,7 +316,7 @@ export default async function TablePage() {
                   </div>
                   <div className="p-4">
                     <div className="space-y-3">
-                      {topAssists.filter(a => a.assists > 0).map((assist, index) => (
+                      {topAssists.map((assist, index) => (
                         <div key={assist.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
                           <div className="flex items-center gap-3">
                             <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
@@ -334,11 +333,10 @@ export default async function TablePage() {
                                 {assist.jersey_number && <span className="text-muted-foreground ml-1">#{assist.jersey_number}</span>}
                               </p>
                               <p className="text-sm text-muted-foreground">{assist.team_name}</p>
-                              {assist.position && <p className="text-xs text-muted-foreground">{assist.position}</p>}
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-blue-600 text-lg">{assist.assists}</p>
+                            <p className="font-bold text-blue-600 text-lg">{assist.assists || 0}</p>
                             <p className="text-xs text-muted-foreground">assists</p>
                           </div>
                         </div>
