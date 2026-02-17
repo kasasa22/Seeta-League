@@ -123,7 +123,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Match Ticker */}
       <MatchTicker matches={tickerMatches || []} />
 
@@ -263,34 +263,34 @@ export default async function HomePage() {
             </div>
 
             {standings && standings.length > 0 ? (
-              <Card>
+              <Card className="overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <table className="w-full min-w-[500px]">
                       <thead>
                         <tr className="border-b bg-muted/50">
-                          <th className="px-4 py-3 text-left text-sm font-bold">
+                          <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold w-10">
                             #
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold">
+                          <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold">
                             Team
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-bold">
+                          <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-bold w-8">
                             P
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-bold">
+                          <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-bold w-8">
                             W
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-bold">
+                          <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-bold w-8">
                             D
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-bold">
+                          <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-bold w-8">
                             L
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-bold">
+                          <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-bold w-10">
                             GD
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-bold">
+                          <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-bold w-12">
                             Pts
                           </th>
                         </tr>
@@ -303,48 +303,48 @@ export default async function HomePage() {
                               index === 0 ? "bg-emerald-500/10" : ""
                             }`}
                           >
-                            <td className="px-4 py-3 font-bold">
-                              <div className="flex items-center gap-2">
+                            <td className="px-2 sm:px-4 py-3 font-bold">
+                              <div className="flex items-center gap-1 sm:gap-2">
                                 {index + 1}
                                 {index === 0 && (
-                                  <Trophy className="h-4 w-4 text-emerald-500" />
+                                  <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500" />
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-3">
+                            <td className="px-2 sm:px-4 py-3">
+                              <div className="flex items-center gap-2 sm:gap-3">
                                 <img
                                   src={getTeamImage(team.team_name)}
                                   alt={team.team_name}
-                                  className="h-8 w-8 rounded-full object-cover"
+                                  className="h-6 w-6 sm:h-8 sm:w-8 rounded-full object-cover flex-shrink-0"
                                 />
-                                <span className="font-semibold">
+                                <span className="font-semibold text-sm sm:text-base truncate max-w-[100px] sm:max-w-none">
                                   {team.team_name}
                                 </span>
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-2 sm:px-4 py-3 text-center text-sm">
                               {team.played}
                             </td>
-                            <td className="px-4 py-3 text-center text-emerald-500 font-semibold">
+                            <td className="px-2 sm:px-4 py-3 text-center text-emerald-500 font-semibold text-sm">
                               {team.won}
                             </td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-2 sm:px-4 py-3 text-center text-sm">
                               {team.drawn}
                             </td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-2 sm:px-4 py-3 text-center text-sm">
                               {team.lost}
                             </td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-2 sm:px-4 py-3 text-center text-sm">
                               {team.goal_difference}
                             </td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-2 sm:px-4 py-3 text-center">
                               <Badge
-                                className={
+                                className={`text-xs sm:text-sm ${
                                   index === 0
                                     ? "bg-emerald-500 text-white"
                                     : "bg-muted"
-                                }
+                                }`}
                               >
                                 {team.points}
                               </Badge>

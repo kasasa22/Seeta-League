@@ -84,7 +84,7 @@ export default async function TablePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Hero Section */}
       <div className="relative h-[250px] sm:h-[300px] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900">
@@ -117,8 +117,8 @@ export default async function TablePage() {
         <Card className="overflow-hidden border-accent/30">
           <CardContent className="p-0">
             {displayData && displayData.length > 0 ? (
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="w-full min-w-[700px]">
+              <div className="overflow-x-auto scrollbar-hide">
+                <table className="w-full min-w-[600px]">
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
                       <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-black">Pos</th>
