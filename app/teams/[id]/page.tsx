@@ -121,6 +121,7 @@ export default async function TeamDetailsPage({ params }: { params: { id: string
     "super strikers": "/teams/superstrikers.png",
     "losti city": "/teams/losti_city.png",
     "club de chege": "/teams/club_de_shege.png",
+    allies: "/teams/allies.png",
   }
 
   const heroImage = teamImages[team.name.toLowerCase()] || `/football-team-.jpg?height=400&width=800&query=football+team+${encodeURIComponent(team.name)}+celebration`

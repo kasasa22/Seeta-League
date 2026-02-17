@@ -34,6 +34,7 @@ const teamImages: Record<string, string> = {
   "super strikers": "/teams/superstrikers.png",
   "losti city": "/teams/losti_city.png",
   "club de chege": "/teams/club_de_shege.png",
+  allies: "/teams/allies.png",
 }
 
 const defaultGetTeamImage = (name: string) => {

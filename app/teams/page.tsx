@@ -29,6 +29,7 @@ export default async function TeamsPage() {
     "super strikers": "/teams/superstrikers.png",
     "losti city": "/teams/losti_city.png",
     "club de chege": "/teams/club_de_shege.png",
+    allies: "/teams/allies.png",
   }
 
   const getTeamImage = (name: string) => {
