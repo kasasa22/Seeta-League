@@ -4,7 +4,7 @@ import { Trophy, Mail, MapPin, Phone } from 'lucide-react'
 const footerLinks = {
   league: [
     { href: '/fixtures', label: 'Fixtures' },
-    { href: '/standings', label: 'Standings' },
+    { href: '/table', label: 'Standings' },
     { href: '/teams', label: 'Teams' },
     { href: '/news', label: 'News' },
   ],
