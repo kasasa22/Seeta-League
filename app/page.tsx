@@ -3,65 +3,106 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { Trophy, Calendar, Users, ArrowRight, TrendingUp, Target, Award, Newspaper, Bell, AlertCircle, CheckCircle, MapPin, DollarSign } from "lucide-react"
 import Image from "next/image"
+import {
+  Trophy,
+  Calendar,
+  Users,
+  ArrowRight,
+  TrendingUp,
+  Target,
+  Award,
+  Newspaper,
+} from "lucide-react"
+import { MatchTicker } from "@/components/match-ticker"
+import { FeaturedMatch } from "@/components/featured-match"
+import { MatchCenter } from "@/components/match-center"
+import { TeamsCarousel } from "@/components/teams-carousel"
 
 export default async function HomePage() {
   const supabase = await createClient()
 
+  // Fetch all recent matches for ticker (both completed and upcoming)
+  const { data: tickerMatches } = await supabase
+    .from("matches")
+    .select(
+      "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
+    )
+    .order("match_date", { ascending: false })
+    .limit(10)
+
   // Fetch latest results
   const { data: latestResults } = await supabase
     .from("matches")
-    .select("*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)")
+    .select(
+      "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
+    )
     .eq("is_completed", true)
     .order("match_date", { ascending: false })
-    .limit(3)
+    .limit(6)
 
   // Fetch upcoming fixtures
   const { data: upcomingFixtures } = await supabase
     .from("matches")
-    .select("*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)")
+    .select(
+      "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
+    )
     .eq("is_completed", false)
     .order("match_date", { ascending: true })
-    .limit(3)
+    .limit(6)
 
-  // Fetch league leader
-  const { data: standings } = await supabase.from("league_standings").select("*").limit(7)
+  // Fetch league standings
+  const { data: standings } = await supabase
+    .from("league_standings")
+    .select("*")
+    .limit(5)
+
+  // Fetch all teams
+  const { data: teams } = await supabase.from("teams").select("*")
 
   // Fetch stats
-  const { data: teams } = await supabase.from("teams").select("*", { count: "exact" })
-  const { data: matches } = await supabase.from("matches").select("*", { count: "exact" }).eq("is_completed", true)
+  const { data: matches } = await supabase
+    .from("matches")
+    .select("*", { count: "exact" })
+    .eq("is_completed", true)
 
   // Calculate total goals
-  const { data: allMatches } = await supabase.from("matches").select("home_score, away_score").eq("is_completed", true)
-  const totalGoals = allMatches?.reduce((sum, match) => sum + (match.home_score || 0) + (match.away_score || 0), 0) || 0
+  const { data: allMatches } = await supabase
+    .from("matches")
+    .select("home_score, away_score")
+    .eq("is_completed", true)
+  const totalGoals =
+    allMatches?.reduce(
+      (sum, match) => sum + (match.home_score || 0) + (match.away_score || 0),
+      0
+    ) || 0
 
   // Get top scorer
-  const topScorer = standings?.[0]
+  const topTeam = standings?.[0]
 
-  // Get top scorers and assists
+  // Get featured match (next upcoming or latest result)
+  const featuredUpcoming = upcomingFixtures?.[0] || null
+  const featuredResult = latestResults?.[0] || null
+
+  // Get top scorers
   let topScorers = null
-  let topAssists = null
-
   try {
     const { data: scorersData } = await supabase
       .from("top_scorers")
       .select("*")
       .limit(5)
     topScorers = scorersData
-  } catch (error) {
-    console.log("Top scorers view not available yet")
+  } catch {
+    // View not available
   }
 
-  try {
-    const { data: assistsData } = await supabase
-      .from("top_assists")
-      .select("*")
-      .limit(5)
-    topAssists = assistsData
-  } catch (error) {
-    console.log("Top assists view not available yet")
-  }
+  // Fetch latest news/blogs
+  const { data: latestNews } = await supabase
+    .from("blogs")
+    .select("*")
+    .eq("is_published", true)
+    .order("created_at", { ascending: false })
+    .limit(3)
 
   const teamImages: Record<string, string> = {
     "godfather's": "/teams/godfathers.png",
@@ -78,707 +119,426 @@ export default async function HomePage() {
 
   const getTeamImage = (name: string) => {
     const key = name.toLowerCase()
-    return teamImages[key] || `/football-team-.jpg?height=40&width=40&query=football+team+logo+${encodeURIComponent(name)}`
+    return teamImages[key] || `/placeholder.svg?height=40&width=40`
   }
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Match Ticker */}
+      <MatchTicker matches={tickerMatches || []} />
+
       {/* Hero Section */}
-      <div className="relative h-[500px] sm:h-[600px] overflow-hidden">
+      <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900">
           <img
             src="/aerial-football-stadium.png"
             alt="Stadium"
             className="h-full w-full object-cover opacity-20 mix-blend-overlay"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         </div>
-        <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 sm:px-6 text-center text-white">
-          <div className="mb-4 sm:mb-6">
-            <Image 
-              src="/logo.jpg" 
-              alt="Seeta League Logo" 
-              width={150} 
-              height={150}
-              className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 mx-auto drop-shadow-2xl rounded-full"
-              priority
-            />
-          </div>
-          <Badge className="mb-3 sm:mb-4 bg-accent text-accent-foreground px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold">Season 2025</Badge>
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-balance">SEETA LEAGUE</h1>
-          <p className="mt-2 sm:mt-4 text-base sm:text-xl md:text-2xl font-medium text-white/90">Alumni Football Championship</p>
-          <div className="mt-8 sm:mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-white">
-            <div className="text-center">
-              <p className="text-3xl sm:text-4xl md:text-5xl font-black text-accent">{teams?.length || 0}</p>
-              <p className="mt-1 text-xs sm:text-sm font-medium uppercase tracking-wide text-white/80">Teams</p>
-            </div>
-            <div className="hidden sm:block h-8 sm:h-12 w-px bg-white/30" />
-            <div className="text-center">
-              <p className="text-3xl sm:text-4xl md:text-5xl font-black text-accent">{matches?.length || 0}</p>
-              <p className="mt-1 text-xs sm:text-sm font-medium uppercase tracking-wide text-white/80">Matches</p>
-            </div>
-            <div className="hidden sm:block h-8 sm:h-12 w-px bg-white/30" />
-            <div className="text-center">
-              <p className="text-3xl sm:text-4xl md:text-5xl font-black text-accent">{totalGoals}</p>
-              <p className="mt-1 text-xs sm:text-sm font-medium uppercase tracking-wide text-white/80">Goals</p>
-            </div>
-          </div>
-          <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 w-full max-w-md sm:max-w-none px-4 sm:px-0 sm:justify-center sm:items-center sm:mx-auto">
-            <Link href="/table" className="flex-1 sm:flex-none">
-              <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold">
-                <Trophy className="mr-2 h-4 sm:h-5 w-4 sm:w-5" />
-                <span className="text-sm sm:text-base">View League Table</span>
-              </Button>
-            </Link>
-            <Link href="/fixtures" className="flex-1 sm:flex-none">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full border-white/30 bg-white/10 text-white hover:bg-white/20 font-semibold"
-              >
-                <Calendar className="mr-2 h-4 sm:h-5 w-4 sm:w-5" />
-                <span className="text-sm sm:text-base">Fixtures & Results</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
 
-      {/* Navigation */}
-      <div className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto max-w-7xl px-3 sm:px-6">
-          <nav className="flex items-center justify-between py-3 sm:py-4">
-            <div className="flex gap-1 sm:gap-2">
-              <Link href="/table">
-                <Button variant="ghost" size="sm" className="font-semibold hover:bg-accent/20 hover:text-accent px-2 sm:px-4">
-                  <Trophy className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Table</span>
-                </Button>
-              </Link>
-              <Link href="/fixtures">
-                <Button variant="ghost" size="sm" className="font-semibold hover:bg-accent/20 hover:text-accent px-2 sm:px-4">
-                  <Calendar className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Fixtures</span>
-                </Button>
-              </Link>
-              <Link href="/teams">
-                <Button variant="ghost" size="sm" className="font-semibold hover:bg-accent/20 hover:text-accent px-2 sm:px-4">
-                  <Users className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Teams</span>
-                </Button>
-              </Link>
-              <Link href="/rules">
-                <Button variant="ghost" size="sm" className="font-semibold hover:bg-accent/20 hover:text-accent px-2 sm:px-4">
-                  <Bell className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Rules</span>
-                </Button>
-              </Link>
-            </div>
-            <Link href="/admin">
-              <Button
-                variant="outline"
-                size="sm"
-                className="font-semibold border-accent/30 hover:bg-accent/10 bg-transparent text-xs sm:text-sm px-2 sm:px-4"
-              >
-                <span className="hidden sm:inline">Admin Portal</span>
-                <span className="sm:hidden">Admin</span>
-              </Button>
-            </Link>
-          </nav>
-        </div>
-      </div>
+        <div className="relative z-10 container mx-auto px-4 py-12 sm:py-16 lg:py-20">
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
+            {/* Left: Branding */}
+            <div className="flex-1 text-center lg:text-left">
+              <div className="mb-6 flex justify-center lg:justify-start">
+                <Image
+                  src="/logo.jpg"
+                  alt="Seeta League Logo"
+                  width={120}
+                  height={120}
+                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-full shadow-2xl ring-4 ring-white/20"
+                  priority
+                />
+              </div>
+              <Badge className="mb-4 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                Season 2025
+              </Badge>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-4">
+                SEETA LEAGUE
+              </h1>
+              <p className="text-lg sm:text-xl text-white/80 mb-8 max-w-md mx-auto lg:mx-0">
+                Alumni Football Championship - Where legends reunite on the
+                pitch
+              </p>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
-        {/* Important Announcements */}
-        <div className="mb-12 sm:mb-16">
-          <div className="mb-6 sm:mb-8 flex items-center gap-3">
-            <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-accent animate-pulse" />
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Important Announcements</h2>
-              <p className="mt-1 text-sm sm:text-base text-muted-foreground">League updates and key information</p>
-            </div>
-          </div>
-          
-          <div className="grid gap-4 sm:gap-6">
-            {/* First Match Day Notice */}
-            <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-accent/5">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="rounded-full bg-accent/20 p-2 sm:p-3">
-                    <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <h3 className="text-lg sm:text-xl font-black">Season Opening Match Day</h3>
-                      <Badge className="bg-accent text-accent-foreground self-start">16 Nov 2025</Badge>
-                    </div>
-                    <p className="text-sm sm:text-base text-muted-foreground mb-3">
-                      The first outing of Seeta League 2025 kicks off on <strong>16th November 2025</strong>
-                    </p>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span>Equinox Sports & Fitness Center, Kulambiro</span>
-                    </div>
-                  </div>
+              {/* Quick Stats */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 mb-8">
+                <div className="text-center">
+                  <p className="text-3xl sm:text-4xl font-black text-emerald-400">
+                    {teams?.length || 0}
+                  </p>
+                  <p className="text-xs uppercase tracking-wider text-white/60">
+                    Teams
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Registration Deadline */}
-            <Card className="border-destructive/30 bg-gradient-to-br from-destructive/10 to-destructive/5">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="rounded-full bg-destructive/20 p-2 sm:p-3">
-                    <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6 text-destructive" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <h3 className="text-lg sm:text-xl font-black">Registration Deadline</h3>
-                      <Badge variant="destructive" className="self-start">16 Oct 2025</Badge>
-                    </div>
-                    <p className="text-sm sm:text-base text-muted-foreground">
-                      All teams must complete registration by <strong>16th October 2025</strong> to participate in the league
-                    </p>
-                  </div>
+                <div className="h-8 w-px bg-white/20" />
+                <div className="text-center">
+                  <p className="text-3xl sm:text-4xl font-black text-emerald-400">
+                    {matches?.length || 0}
+                  </p>
+                  <p className="text-xs uppercase tracking-wider text-white/60">
+                    Matches
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Fees & Payments */}
-            <Card className="border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="rounded-full bg-blue-500/20 p-2 sm:p-3">
-                    <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg sm:text-xl font-black mb-3">Fees & Payments</h3>
-                    <div className="space-y-2 text-sm sm:text-base">
-                      <div className="flex items-center justify-between p-2 rounded bg-muted/50">
-                        <span className="text-muted-foreground">Team Fee (per game week)</span>
-                        <span className="font-bold text-blue-400">UGX 100,000</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded bg-muted/50">
-                        <span className="text-muted-foreground">Team Commitment Fee</span>
-                        <span className="font-bold text-blue-400">UGX 50,000</span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                        *Team commitment fee must be paid before fixtures are released
-                      </p>
-                    </div>
-                  </div>
+                <div className="h-8 w-px bg-white/20" />
+                <div className="text-center">
+                  <p className="text-3xl sm:text-4xl font-black text-emerald-400">
+                    {totalGoals}
+                  </p>
+                  <p className="text-xs uppercase tracking-wider text-white/60">
+                    Goals
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* League Rules Summary */}
-            <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="rounded-full bg-emerald-500/20 p-2 sm:p-3">
-                    <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg sm:text-xl font-black mb-3">Key Registration Rules</h3>
-                    <ul className="space-y-2 text-sm sm:text-base text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-1">•</span>
-                        <span><strong>Eligibility:</strong> Only Seeta High School alumni (+ 2 foreign players allowed per team)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-1">•</span>
-                        <span><strong>Team Size:</strong> Minimum 8 players, maximum 20 players per season</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-1">•</span>
-                        <span><strong>Player Album:</strong> Full team roster with passport photos, years & campus required</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-1">•</span>
-                        <span><strong>Match Frequency:</strong> Games played once a month initially</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-1">•</span>
-                        <span><strong>No Current Students:</strong> Only alumni can participate</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                <Link href="/table">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-semibold"
+                  >
+                    <Trophy className="mr-2 h-5 w-5" />
+                    View Standings
+                  </Button>
+                </Link>
+                <Link href="/fixtures">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full sm:w-auto border-white/30 bg-white/10 text-white hover:bg-white/20 font-semibold"
+                  >
+                    <Calendar className="mr-2 h-5 w-5" />
+                    All Fixtures
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Featured Match */}
+            <div className="flex-1 w-full max-w-lg">
+              <FeaturedMatch
+                match={featuredUpcoming || featuredResult}
+                type={featuredUpcoming ? "upcoming" : "result"}
+              />
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* Stats Overview */}
-        <div className="mb-12 sm:mb-16">
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-6 sm:mb-8">League Statistics</h2>
-          <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="bg-gradient-to-br from-accent/20 to-accent/5 border-accent/30">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6">
-                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total Teams</CardTitle>
-                <Users className="h-3 w-3 sm:h-4 sm:w-4 text-accent" />
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0">
-                <div className="text-2xl sm:text-3xl font-black text-accent">{teams?.length || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Active in competition</p>
-              </CardContent>
-            </Card>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-12 space-y-16">
+        {/* Match Center */}
+        <section>
+          <MatchCenter
+            fixtures={upcomingFixtures || []}
+            results={latestResults || []}
+          />
+        </section>
 
-            <Card className="bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border-emerald-500/30">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6">
-                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Matches</CardTitle>
-                <Target className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-400" />
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0">
-                <div className="text-2xl sm:text-3xl font-black text-emerald-400">{matches?.length || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Completed fixtures</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-blue-500/30">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6">
-                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total Goals</CardTitle>
-                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-blue-400" />
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0">
-                <div className="text-2xl sm:text-3xl font-black text-blue-400">{totalGoals}</div>
-                <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
-                  {matches?.length ? (totalGoals / matches.length).toFixed(1) : 0} per match
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-amber-500/20 to-amber-500/5 border-amber-500/30 col-span-2 md:col-span-1">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6">
-                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">League Leader</CardTitle>
-                <Award className="h-3 w-3 sm:h-4 sm:w-4 text-amber-400" />
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0">
-                <div className="text-lg sm:text-xl font-black text-amber-400 truncate">{topScorer?.team_name || "TBD"}</div>
-                <p className="text-xs text-muted-foreground mt-1">{topScorer?.points || 0} points</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* League Table Preview */}
-        {standings && standings.length > 0 && (
-          <div className="mb-12 sm:mb-16">
-            <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">League Standings</h2>
-                <p className="mt-1 text-sm sm:text-base text-muted-foreground">Top 7 teams in the competition</p>
+        {/* League Table & Stats */}
+        <section className="grid gap-8 lg:grid-cols-3">
+          {/* League Table */}
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-500" />
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+                    Standings
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Top 5 teams
+                  </p>
+                </div>
               </div>
               <Link href="/table">
-                <Button variant="ghost" size="sm" className="font-semibold hover:bg-accent/20 hover:text-accent self-start">
-                  <span className="text-sm">View Full Table</span>
+                <Button variant="ghost" size="sm" className="font-semibold">
+                  Full Table
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             </div>
-            <Card className="overflow-hidden border-accent/30">
-              <CardContent className="p-0">
-                <div className="overflow-x-auto -mx-4 sm:mx-0">
-                  <table className="w-full min-w-[600px]">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/50">
-                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-black">Pos</th>
-                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-black">Team</th>
-                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-black">P</th>
-                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-black">W</th>
-                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-black">D</th>
-                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-black">L</th>
-                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-black">GD</th>
-                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-black">Pts</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {standings.map((team, index) => (
-                        <tr
-                          key={team.id}
-                          className={`border-b border-border/50 transition-colors hover:bg-accent/10 ${
-                            index === 0 ? "bg-accent/20" : ""
-                          }`}
-                        >
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 font-black text-sm">
-                            <div className="flex items-center gap-1 sm:gap-2">
-                              {index + 1}
-                              {index === 0 && <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-accent" />}
-                            </div>
-                          </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-sm">
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={getTeamImage(team.team_name)}
-                              alt={team.team_name}
-                              className="h-6 w-6 rounded-full object-cover"
-                            />
-                            <span>{team.team_name}</span>
-                          </div>
-                        </td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-sm">{team.played}</td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-accent text-sm">{team.won}</td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-sm">{team.drawn}</td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-sm">{team.lost}</td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-sm">{team.goal_difference}</td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                            <Badge
-                              className={`font-black text-xs sm:text-sm ${index === 0 ? "bg-accent text-accent-foreground" : "bg-muted"}`}
-                            >
-                              {team.points}
-                            </Badge>
-                          </td>
+
+            {standings && standings.length > 0 ? (
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="px-4 py-3 text-left text-sm font-bold">
+                            #
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-bold">
+                            Team
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-bold">
+                            P
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-bold">
+                            W
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-bold">
+                            D
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-bold">
+                            L
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-bold">
+                            GD
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-bold">
+                            Pts
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {standings.map((team, index) => (
+                          <tr
+                            key={team.id}
+                            className={`border-b transition-colors hover:bg-muted/30 ${
+                              index === 0 ? "bg-emerald-500/10" : ""
+                            }`}
+                          >
+                            <td className="px-4 py-3 font-bold">
+                              <div className="flex items-center gap-2">
+                                {index + 1}
+                                {index === 0 && (
+                                  <Trophy className="h-4 w-4 text-emerald-500" />
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={getTeamImage(team.team_name)}
+                                  alt={team.team_name}
+                                  className="h-8 w-8 rounded-full object-cover"
+                                />
+                                <span className="font-semibold">
+                                  {team.team_name}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {team.played}
+                            </td>
+                            <td className="px-4 py-3 text-center text-emerald-500 font-semibold">
+                              {team.won}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {team.drawn}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {team.lost}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {team.goal_difference}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <Badge
+                                className={
+                                  index === 0
+                                    ? "bg-emerald-500 text-white"
+                                    : "bg-muted"
+                                }
+                              >
+                                {team.points}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="flex h-40 items-center justify-center text-muted-foreground">
+                  No standings data yet
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Stats Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Stats Cards */}
+            <Card className="bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border-emerald-500/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Award className="h-4 w-4 text-emerald-500" />
+                  League Leader
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  {topTeam && (
+                    <>
+                      <img
+                        src={getTeamImage(topTeam.team_name)}
+                        alt={topTeam.team_name}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="font-bold text-lg">{topTeam.team_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {topTeam.points} points
+                        </p>
+                      </div>
+                    </>
+                  )}
+                  {!topTeam && (
+                    <p className="text-muted-foreground">TBD</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Season Stats
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Total Matches</span>
+                  <span className="font-bold">{matches?.length || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Total Goals</span>
+                  <span className="font-bold">{totalGoals}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Goals/Match</span>
+                  <span className="font-bold">
+                    {matches?.length
+                      ? (totalGoals / matches.length).toFixed(1)
+                      : 0}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Top Scorers */}
+            {topScorers && topScorers.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Target className="h-4 w-4 text-emerald-500" />
+                    Top Scorers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {topScorers.slice(0, 3).map((scorer, index) => (
+                      <div
+                        key={scorer.id}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                              index === 0
+                                ? "bg-emerald-500/20 text-emerald-500"
+                                : "bg-muted"
+                            }`}
+                          >
+                            {index + 1}
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold">
+                              {scorer.player_name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {scorer.team_name}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="font-bold text-emerald-500">
+                          {scorer.goals}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
+        </section>
+
+        {/* Latest News */}
+        {latestNews && latestNews.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Newspaper className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-500" />
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+                    Latest News
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Match reports and updates
+                  </p>
+                </div>
+              </div>
+              <Link href="/news">
+                <Button variant="ghost" size="sm" className="font-semibold">
+                  All News
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {latestNews.map((news: any, index: number) => (
+                <Link key={news.id} href={`/news/${news.id}`}>
+                  <Card className="group overflow-hidden h-full hover:shadow-xl hover:border-emerald-500/50 transition-all duration-300">
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={news.image_url || "/football-match-action.png"}
+                        alt={news.title}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      {index === 0 && (
+                        <Badge className="absolute top-3 right-3 bg-emerald-500 text-white">
+                          Latest
+                        </Badge>
+                      )}
+                    </div>
+                    <CardContent className="p-4">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {new Date(news.created_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                      <h3 className="font-bold line-clamp-2 group-hover:text-emerald-500 transition-colors mb-2">
+                        {news.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {news.body.replace(/<[^>]*>/g, "").substring(0, 100)}...
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
-        {/* Player Statistics */}
-        {(topScorers && topScorers.length > 0) || (topAssists && topAssists.length > 0) ? (
-          <div className="mb-12 sm:mb-16">
-            <div className="mb-6 sm:mb-8 flex items-center gap-3">
-              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Player Statistics</h2>
-                <p className="mt-1 text-sm sm:text-base text-muted-foreground">Top performers this season</p>
-              </div>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Top Scorers */}
-              {topScorers && topScorers.length > 0 && (
-                <Card className="overflow-hidden border-accent/30">
-                  <CardContent className="p-0">
-                    <div className="bg-emerald-500 p-4">
-                      <div className="flex items-center gap-2">
-                        <Target className="h-5 w-5 text-white" />
-                        <h3 className="text-xl font-bold text-white">Top Scorers</h3>
-                      </div>
-                      <p className="text-emerald-100 text-sm mt-1">Leading goal scorers this season</p>
-                    </div>
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        {topScorers.map((scorer, index) => (
-                          <div key={scorer.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                            <div className="flex items-center gap-3">
-                              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                                index === 0 ? "bg-emerald-500/20 text-emerald-600" :
-                                index === 1 ? "bg-slate-500/20 text-slate-600" :
-                                index === 2 ? "bg-amber-700/20 text-amber-700" :
-                                "bg-muted text-muted-foreground"
-                              }`}>
-                                {index + 1}
-                              </div>
-                              <div>
-                                <p className="font-semibold">
-                                  {scorer.player_name}
-                                  {scorer.jersey_number && <span className="text-muted-foreground ml-1">#{scorer.jersey_number}</span>}
-                                </p>
-                                <p className="text-sm text-muted-foreground">{scorer.team_name}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-emerald-600 text-lg">{scorer.goals || 0}</p>
-                              <p className="text-xs text-muted-foreground">goals</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Top Assists */}
-              {topAssists && topAssists.length > 0 && (
-                <Card className="overflow-hidden border-accent/30">
-                  <CardContent className="p-0">
-                    <div className="bg-blue-500 p-4">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-5 w-5 text-white" />
-                        <h3 className="text-xl font-bold text-white">Top Assists</h3>
-                      </div>
-                      <p className="text-blue-100 text-sm mt-1">Leading assist providers this season</p>
-                    </div>
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        {topAssists.map((assist, index) => (
-                          <div key={assist.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                            <div className="flex items-center gap-3">
-                              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                                index === 0 ? "bg-blue-500/20 text-blue-600" :
-                                index === 1 ? "bg-slate-500/20 text-slate-600" :
-                                index === 2 ? "bg-amber-700/20 text-amber-700" :
-                                "bg-muted text-muted-foreground"
-                              }`}>
-                                {index + 1}
-                              </div>
-                              <div>
-                                <p className="font-semibold">
-                                  {assist.player_name}
-                                  {assist.jersey_number && <span className="text-muted-foreground ml-1">#{assist.jersey_number}</span>}
-                                </p>
-                                <p className="text-sm text-muted-foreground">{assist.team_name}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-blue-600 text-lg">{assist.assists || 0}</p>
-                              <p className="text-xs text-muted-foreground">assists</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        ) : null}
-
-        {/* News Section */}
-        <div className="mb-12 sm:mb-16">
-          <div className="mb-6 sm:mb-8 flex items-center gap-3">
-            <Newspaper className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Latest News</h2>
-              <p className="mt-1 text-sm sm:text-base text-muted-foreground">Updates from the league</p>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="group overflow-hidden transition-all hover:shadow-lg hover:border-accent/50">
-              <div className="relative h-48 overflow-hidden bg-gradient-to-br from-accent/20 to-accent/5">
-                <img
-                  src="/football-match-action.png"
-                  alt="News"
-                  className="h-full w-full object-cover opacity-60 transition-transform group-hover:scale-105"
-                />
-                <Badge className="absolute right-4 top-4 bg-accent text-accent-foreground">Latest</Badge>
-              </div>
-              <CardContent className="p-4 sm:p-6">
-                <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-                  {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                </p>
-                <h3 className="text-lg sm:text-xl font-black mb-2">Season 2025 Kicks Off</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  The Seeta League 2025 season has officially begun with exciting matches and fierce competition among
-                  all participating teams.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="group overflow-hidden transition-all hover:shadow-lg hover:border-accent/50">
-              <div className="relative h-48 overflow-hidden bg-gradient-to-br from-emerald-500/20 to-emerald-500/5">
-                <img
-                  src="/football-stadium-pitch.jpg"
-                  alt="News"
-                  className="h-full w-full object-cover opacity-60 transition-transform group-hover:scale-105"
-                />
-              </div>
-              <CardContent className="p-4 sm:p-6">
-                <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-                  {new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-                <h3 className="text-lg sm:text-xl font-black mb-2">New Teams Join Competition</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Several new teams have registered for this season, bringing fresh talent and increasing the level of
-                  competition in the league.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="group overflow-hidden transition-all hover:shadow-lg hover:border-accent/50">
-              <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-500/20 to-blue-500/5">
-                <img
-                  src="/football-league-table-trophy.jpg"
-                  alt="News"
-                  className="h-full w-full object-cover opacity-60 transition-transform group-hover:scale-105"
-                />
-              </div>
-              <CardContent className="p-4 sm:p-6">
-                <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-                  {new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-                <h3 className="text-lg sm:text-xl font-black mb-2">Championship Format Announced</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  The league has announced the tournament format with round-robin matches leading to an exciting playoff
-                  stage for the top teams.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Latest Results */}
-        <div className="mb-12 sm:mb-16">
-          <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Latest Results</h2>
-              <p className="mt-1 text-sm sm:text-base text-muted-foreground">Recent match outcomes</p>
-            </div>
-            <Link href="/fixtures">
-              <Button variant="ghost" size="sm" className="font-semibold hover:bg-accent/20 hover:text-accent self-start">
-                <span className="text-sm">All Results</span>
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-          {latestResults && latestResults.length > 0 ? (
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {latestResults.map((match) => (
-                <Card
-                  key={match.id}
-                  className="group overflow-hidden transition-all hover:shadow-lg hover:border-accent/50"
-                >
-                  <div className="relative h-32 overflow-hidden bg-gradient-to-br from-accent/20 to-accent/5">
-                    <img
-                      src="/football-match-action.png"
-                      alt="Match"
-                      className="h-full w-full object-cover opacity-40 transition-transform group-hover:scale-105"
-                    />
-                    <Badge className="absolute right-4 top-4 bg-card text-card-foreground">MD {match.match_day}</Badge>
-                  </div>
-                  <CardContent className="p-4 sm:p-6">
-                    <p className="mb-4 text-xs sm:text-sm font-medium text-muted-foreground">
-                      {new Date(match.match_date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </p>
-                      <div className="flex items-center justify-between gap-2 sm:gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={match.home_team?.name ? getTeamImage(match.home_team.name) : "/placeholder.svg"}
-                              alt={match.home_team?.name ?? "Home team"}
-                              className="h-8 w-8 rounded-full object-cover"
-                            />
-                            <p className="text-sm sm:text-lg font-bold truncate">{match.home_team?.name}</p>
-                          </div>
-                        </div>
-                      <div className="px-2 sm:px-6 text-center flex-shrink-0">
-                        <p className="text-2xl sm:text-3xl font-black text-accent whitespace-nowrap">
-                          {match.home_score} - {match.away_score}
-                        </p>
-                      </div>
-                        <div className="flex-1 text-right min-w-0">
-                          <div className="flex items-center justify-end gap-2">
-                            <p className="text-sm sm:text-lg font-bold truncate">{match.away_team?.name}</p>
-                            <img
-                              src={match.away_team?.name ? getTeamImage(match.away_team.name) : "/placeholder.svg"}
-                              alt={match.away_team?.name ?? "Away team"}
-                              className="h-8 w-8 rounded-full object-cover"
-                            />
-                          </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="flex h-40 items-center justify-center text-muted-foreground">
-                No results yet
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Upcoming Fixtures */}
-        <div>
-          <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Upcoming Fixtures</h2>
-              <p className="mt-1 text-sm sm:text-base text-muted-foreground">Next scheduled matches</p>
-            </div>
-            <Link href="/fixtures">
-              <Button variant="ghost" size="sm" className="font-semibold hover:bg-accent/20 hover:text-accent self-start">
-                <span className="text-sm">All Fixtures</span>
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-          {upcomingFixtures && upcomingFixtures.length > 0 ? (
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {upcomingFixtures.map((match) => (
-                <Card
-                  key={match.id}
-                  className="group overflow-hidden transition-all hover:shadow-lg hover:border-accent/50"
-                >
-                  <div className="relative h-32 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-                    <img
-                      src="/football-stadium-pitch.jpg"
-                      alt="Stadium"
-                      className="h-full w-full object-cover opacity-50 transition-transform group-hover:scale-105"
-                    />
-                    <Badge className="absolute right-4 top-4 bg-accent text-accent-foreground">
-                      MD {match.match_day}
-                    </Badge>
-                  </div>
-                  <CardContent className="p-4 sm:p-6">
-                    <p className="mb-4 text-xs sm:text-sm font-medium text-muted-foreground">
-                      {new Date(match.match_date).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}{" "}
-                      • {match.match_time || "TBD"}
-                    </p>
-                    <div className="flex items-center justify-between gap-2 sm:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={match.home_team?.name ? getTeamImage(match.home_team.name) : "/placeholder.svg"}
-                            alt={match.home_team?.name ?? "Home team"}
-                            className="h-8 w-8 rounded-full object-cover"
-                          />
-                          <p className="text-sm sm:text-lg font-bold truncate">{match.home_team?.name}</p>
-                        </div>
-                      </div>
-                      <div className="px-2 sm:px-6 text-center flex-shrink-0">
-                        <p className="text-xl sm:text-2xl font-black text-muted-foreground">VS</p>
-                      </div>
-                      <div className="flex-1 text-right min-w-0">
-                        <div className="flex items-center justify-end gap-2">
-                          <p className="text-sm sm:text-lg font-bold truncate">{match.away_team?.name}</p>
-                          <img
-                            src={match.away_team?.name ? getTeamImage(match.away_team.name) : "/placeholder.svg"}
-                            alt={match.away_team?.name ?? "Away team"}
-                            className="h-8 w-8 rounded-full object-cover"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    {match.venue && (
-                      <p className="mt-4 text-xs sm:text-sm text-muted-foreground">
-                        <span className="font-medium">Venue:</span> {match.venue}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="flex h-40 items-center justify-center text-muted-foreground">
-                No upcoming fixtures
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* Teams Carousel */}
+        <section>
+          <TeamsCarousel teams={teams || []} />
+        </section>
       </div>
     </div>
   )
