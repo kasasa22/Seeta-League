@@ -116,6 +116,10 @@ export default async function HomePage() {
     "losti city": "/teams/losti_city.png",
     "club de chege": "/teams/club_de_shege.png",
     allies: "/teams/allies.png",
+    kawaago: "/teams/kawaago.png",
+    panthers: "/teams/panthers.png",
+    pundits: "/teams/pundits.png",
+    "the villagers": "/teams/villagers.png",
   }
 
   const getTeamImage = (name: string) => {
