@@ -14,7 +14,7 @@ export default async function TeamsPage() {
   const { data: standings } = await supabase.from("league_standings").select("*")
 
   const teamsWithStats = teams?.map((team) => {
-    const stats = standings?.find((s) => s.id === team.id)
+    const stats = standings?.find((s) => s.team_id === team.id)
     return { ...team, stats }
   })
 
@@ -70,7 +70,7 @@ export default async function TeamsPage() {
         {teamsWithStats && teamsWithStats.length > 0 ? (
           <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {teamsWithStats.map((team) => {
-              const position = standings?.findIndex((s) => s.id === team.id)
+              const position = standings?.findIndex((s) => s.team_id === team.id)
 
               return (
                 <Link key={team.id} href={`/teams/${team.id}`} className="group block">
@@ -91,12 +91,18 @@ export default async function TeamsPage() {
                       <h3 className="mb-4 text-xl sm:text-2xl font-black">{team.name}</h3>
                       {team.stats ? (
                         <div className="space-y-2 sm:space-y-3">
-                          <div className="flex items-center justify-between rounded-lg bg-accent/20 p-3">
-                            <div className="flex items-center gap-2">
-                              <Trophy className="h-4 w-4 text-accent" />
-                              <span className="font-semibold">Points</span>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex items-center justify-between rounded-lg bg-accent/20 p-3">
+                              <div className="flex items-center gap-2">
+                                <Trophy className="h-4 w-4 text-accent" />
+                                <span className="text-xs font-semibold">Points</span>
+                              </div>
+                              <span className="text-xl font-black text-accent">{team.stats.points}</span>
                             </div>
-                            <span className="text-2xl font-black text-accent">{team.stats.points}</span>
+                            <div className="flex items-center justify-between rounded-lg bg-muted p-3">
+                              <span className="text-xs font-semibold">Played</span>
+                              <span className="text-xl font-black">{team.stats.played}</span>
+                            </div>
                           </div>
                           <div className="grid grid-cols-3 gap-2 text-center">
                             <div className="rounded-lg bg-muted p-2">
