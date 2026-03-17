@@ -46,7 +46,7 @@ export default async function TeamDetailsPage({ params }: { params: { id: string
   const { data: standing } = await supabase
     .from("league_standings")
     .select("*")
-    .eq("id", team.id)
+    .eq("team_id", team.id)
     .maybeSingle()
 
   const { data: players } = await supabase
