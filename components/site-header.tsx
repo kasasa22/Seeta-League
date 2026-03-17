@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, Trophy, Calendar, Users, BarChart3, Newspaper } from 'lucide-react'
+import { Menu, Trophy, Calendar, Users, BarChart3, Newspaper, Settings } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ const navItems = [
   { href: '/table', label: 'Table', icon: BarChart3 },
   { href: '/teams', label: 'Teams', icon: Users },
   { href: '/news', label: 'News', icon: Newspaper },
+  { href: '/admin', label: 'Admin', icon: Settings },
 ]
 
 export function SiteHeader() {
