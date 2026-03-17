@@ -19,7 +19,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 const navItems = [
   { href: '/', label: 'Home', icon: Trophy },
   { href: '/fixtures', label: 'Matches', icon: Calendar },
-  { href: '/standings', label: 'Table', icon: BarChart3 },
+  { href: '/table', label: 'Table', icon: BarChart3 },
   { href: '/teams', label: 'Teams', icon: Users },
   { href: '/news', label: 'News', icon: Newspaper },
 ]
