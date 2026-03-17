@@ -72,7 +72,6 @@ export default async function TablePage() {
     raptors: "/teams/raptors.png",
     "covid boys": "/teams/covid_boys.png",
     "top bins": "/teams/topbins.png",
-    ronavics: "/teams/ronavics.png",
     "super strikers": "/teams/superstrikers.png",
     "losti city": "/teams/losti_city.png",
     "club de chege": "/teams/club_de_shege.png",
