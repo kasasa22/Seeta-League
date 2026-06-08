@@ -18,59 +18,60 @@ import { MatchTicker } from "@/components/match-ticker"
 import { FeaturedMatch } from "@/components/featured-match"
 import { MatchCenter } from "@/components/match-center"
 import { TeamsCarousel } from "@/components/teams-carousel"
+import { getSelectedSeasonId } from "@/lib/seasons"
+
+function bySeason<T>(query: T, seasonId: string | null): T {
+  return seasonId ? (query as any).eq("season_id", seasonId) : query
+}
 
 export default async function HomePage() {
   const supabase = await createClient()
+  const seasonId = await getSelectedSeasonId()
 
-  // Fetch all recent matches for ticker (both completed and upcoming)
-  const { data: tickerMatches } = await supabase
-    .from("matches")
-    .select(
-      "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
-    )
-    .order("match_date", { ascending: false })
-    .limit(10)
+  const matchSelect =
+    "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
 
-  // Fetch latest results
-  const { data: latestResults } = await supabase
-    .from("matches")
-    .select(
-      "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
-    )
-    .eq("is_completed", true)
-    .order("match_date", { ascending: false })
-    .limit(6)
+  const { data: tickerMatches } = await bySeason(
+    supabase.from("matches").select(matchSelect).order("match_date", { ascending: false }).limit(10),
+    seasonId
+  )
 
-  // Fetch upcoming fixtures
-  const { data: upcomingFixtures } = await supabase
-    .from("matches")
-    .select(
-      "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
-    )
-    .eq("is_completed", false)
-    .order("match_date", { ascending: true })
-    .limit(6)
+  const { data: latestResults } = await bySeason(
+    supabase
+      .from("matches")
+      .select(matchSelect)
+      .eq("is_completed", true)
+      .order("match_date", { ascending: false })
+      .limit(6),
+    seasonId
+  )
 
-  // Fetch league standings
-  const { data: standings } = await supabase
-    .from("league_standings")
-    .select("*")
-    .limit(5)
+  const { data: upcomingFixtures } = await bySeason(
+    supabase
+      .from("matches")
+      .select(matchSelect)
+      .eq("is_completed", false)
+      .order("match_date", { ascending: true })
+      .limit(6),
+    seasonId
+  )
 
-  // Fetch all teams
-  const { data: teams } = await supabase.from("teams").select("*")
+  const { data: standings } = await bySeason(
+    supabase.from("league_standings").select("*").limit(5),
+    seasonId
+  )
 
-  // Fetch stats
-  const { data: matches } = await supabase
-    .from("matches")
-    .select("*", { count: "exact" })
-    .eq("is_completed", true)
+  const { data: teams } = await bySeason(supabase.from("teams").select("*"), seasonId)
 
-  // Calculate total goals
-  const { data: allMatches } = await supabase
-    .from("matches")
-    .select("home_score, away_score")
-    .eq("is_completed", true)
+  const { data: matches } = await bySeason(
+    supabase.from("matches").select("*", { count: "exact" }).eq("is_completed", true),
+    seasonId
+  )
+
+  const { data: allMatches } = await bySeason(
+    supabase.from("matches").select("home_score, away_score").eq("is_completed", true),
+    seasonId
+  )
   const totalGoals =
     allMatches?.reduce(
       (sum, match) => sum + (match.home_score || 0) + (match.away_score || 0),

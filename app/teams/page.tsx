@@ -4,14 +4,19 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { ArrowLeft, Users, Trophy } from "lucide-react"
+import { getSelectedSeasonId } from "@/lib/seasons"
 
 export default async function TeamsPage() {
   const supabase = await createClient()
+  const seasonId = await getSelectedSeasonId()
 
-  const { data: teams } = await supabase.from("teams").select("*").eq("is_active", true).order("name")
+  let teamsQuery = supabase.from("teams").select("*").eq("is_active", true).order("name")
+  if (seasonId) teamsQuery = teamsQuery.eq("season_id", seasonId)
+  const { data: teams } = await teamsQuery
 
-  // Get stats for each team
-  const { data: standings } = await supabase.from("league_standings").select("*")
+  let standingsQuery = supabase.from("league_standings").select("*")
+  if (seasonId) standingsQuery = standingsQuery.eq("season_id", seasonId)
+  const { data: standings } = await standingsQuery
 
   const teamsWithStats = teams?.map((team) => {
     const stats = standings?.find((s) => s.team_id === team.id)
@@ -36,7 +41,8 @@ export default async function TeamsPage() {
     "the villagers": "/teams/villagers.png",
   }
 
-  const getTeamImage = (name: string) => {
+  const getTeamImage = (name: string, logoUrl?: string | null) => {
+    if (logoUrl) return logoUrl
     const key = name.toLowerCase()
     return teamImages[key] || `/football-team-.jpg?key=pqr40&height=300&width=400&query=football+team+${encodeURIComponent(name)}+players`
   }
@@ -81,7 +87,7 @@ export default async function TeamsPage() {
                   <Card className="h-full overflow-hidden transition-all hover:shadow-lg hover:border-accent/50">
                     <div className="relative h-48 overflow-hidden bg-gradient-to-br from-accent/20 to-accent/5">
                       <img
-                        src={getTeamImage(team.name)}
+                        src={getTeamImage(team.name, team.logo_url)}
                         alt={team.name}
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       />

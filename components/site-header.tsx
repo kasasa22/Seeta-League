@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, Trophy, Calendar, Users, BarChart3, Newspaper, Settings } from 'lucide-react'
+import { Menu, Trophy, Calendar, Users, BarChart3, Newspaper, Settings, Camera } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { SeasonSelector } from '@/components/season-selector'
 
 const navItems = [
   { href: '/', label: 'Home', icon: Trophy },
@@ -22,6 +23,7 @@ const navItems = [
   { href: '/table', label: 'Table', icon: BarChart3 },
   { href: '/teams', label: 'Teams', icon: Users },
   { href: '/news', label: 'News', icon: Newspaper },
+  { href: '/activities', label: 'Activities', icon: Camera },
   { href: '/admin', label: 'Admin', icon: Settings },
 ]
 
@@ -88,6 +90,7 @@ export function SiteHeader() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            <SeasonSelector />
             <ThemeToggle />
 
             {/* Mobile Menu */}

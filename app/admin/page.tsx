@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Users, Calendar, Trophy, TrendingUp, ArrowRight, Home, UserCircle } from "lucide-react"
+import { Users, Calendar, Trophy, TrendingUp, ArrowRight, Home, UserCircle, Shield, UserCog, Wallet, Newspaper, MessagesSquare, Eye, Award } from "lucide-react"
 import { AdminAuthWrapper } from "@/components/admin/admin-auth-wrapper"
 import type { LeagueStanding } from "@/lib/types"
 
@@ -485,6 +485,126 @@ export default async function AdminDashboard() {
                   </div>
                   <CardTitle className="text-white">Enter Scores</CardTitle>
                   <CardDescription className="text-slate-400">Update match results</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/admin/users" className="group">
+              <Card className="cursor-pointer border-slate-700 bg-slate-800/50 backdrop-blur transition-all hover:scale-105 hover:border-purple-500 hover:bg-slate-800">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="rounded-lg bg-purple-500/20 p-3 group-hover:bg-purple-500/30">
+                      <UserCog className="h-6 w-6 text-purple-400" />
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-600 transition-colors group-hover:text-purple-400" />
+                  </div>
+                  <CardTitle className="text-white">Users &amp; Roles</CardTitle>
+                  <CardDescription className="text-slate-400">Approve users, assign roles</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/admin/roles" className="group">
+              <Card className="cursor-pointer border-slate-700 bg-slate-800/50 backdrop-blur transition-all hover:scale-105 hover:border-pink-500 hover:bg-slate-800">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="rounded-lg bg-pink-500/20 p-3 group-hover:bg-pink-500/30">
+                      <Shield className="h-6 w-6 text-pink-400" />
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-600 transition-colors group-hover:text-pink-400" />
+                  </div>
+                  <CardTitle className="text-white">Roles &amp; Permissions</CardTitle>
+                  <CardDescription className="text-slate-400">Define what roles can do</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/admin/team" className="group">
+              <Card className="cursor-pointer border-slate-700 bg-slate-800/50 backdrop-blur transition-all hover:scale-105 hover:border-teal-500 hover:bg-slate-800">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="rounded-lg bg-teal-500/20 p-3 group-hover:bg-teal-500/30">
+                      <Users className="h-6 w-6 text-teal-400" />
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-600 transition-colors group-hover:text-teal-400" />
+                  </div>
+                  <CardTitle className="text-white">My Team</CardTitle>
+                  <CardDescription className="text-slate-400">Captains: register team &amp; players</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/admin/finance" className="group">
+              <Card className="cursor-pointer border-slate-700 bg-slate-800/50 backdrop-blur transition-all hover:scale-105 hover:border-green-500 hover:bg-slate-800">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="rounded-lg bg-green-500/20 p-3 group-hover:bg-green-500/30">
+                      <Wallet className="h-6 w-6 text-green-400" />
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-600 transition-colors group-hover:text-green-400" />
+                  </div>
+                  <CardTitle className="text-white">Finance</CardTitle>
+                  <CardDescription className="text-slate-400">Payments &amp; expenses</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/admin/activities" className="group">
+              <Card className="cursor-pointer border-slate-700 bg-slate-800/50 backdrop-blur transition-all hover:scale-105 hover:border-orange-500 hover:bg-slate-800">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="rounded-lg bg-orange-500/20 p-3 group-hover:bg-orange-500/30">
+                      <Newspaper className="h-6 w-6 text-orange-400" />
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-600 transition-colors group-hover:text-orange-400" />
+                  </div>
+                  <CardTitle className="text-white">News &amp; Activities</CardTitle>
+                  <CardDescription className="text-slate-400">Coordinator posts</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/admin/messages" className="group">
+              <Card className="cursor-pointer border-slate-700 bg-slate-800/50 backdrop-blur transition-all hover:scale-105 hover:border-sky-500 hover:bg-slate-800">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="rounded-lg bg-sky-500/20 p-3 group-hover:bg-sky-500/30">
+                      <MessagesSquare className="h-6 w-6 text-sky-400" />
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-600 transition-colors group-hover:text-sky-400" />
+                  </div>
+                  <CardTitle className="text-white">Messages &amp; RFCs</CardTitle>
+                  <CardDescription className="text-slate-400">Inbox and requests</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/admin/records" className="group">
+              <Card className="cursor-pointer border-slate-700 bg-slate-800/50 backdrop-blur transition-all hover:scale-105 hover:border-yellow-500 hover:bg-slate-800">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="rounded-lg bg-yellow-500/20 p-3 group-hover:bg-yellow-500/30">
+                      <Award className="h-6 w-6 text-yellow-400" />
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-600 transition-colors group-hover:text-yellow-400" />
+                  </div>
+                  <CardTitle className="text-white">Records</CardTitle>
+                  <CardDescription className="text-slate-400">MOTM &amp; outstanding players</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/admin/overview" className="group">
+              <Card className="cursor-pointer border-slate-700 bg-slate-800/50 backdrop-blur transition-all hover:scale-105 hover:border-indigo-500 hover:bg-slate-800">
+                <CardHeader>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="rounded-lg bg-indigo-500/20 p-3 group-hover:bg-indigo-500/30">
+                      <Eye className="h-6 w-6 text-indigo-400" />
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-slate-600 transition-colors group-hover:text-indigo-400" />
+                  </div>
+                  <CardTitle className="text-white">President Overview</CardTitle>
+                  <CardDescription className="text-slate-400">Read-only visibility</CardDescription>
                 </CardHeader>
               </Card>
             </Link>

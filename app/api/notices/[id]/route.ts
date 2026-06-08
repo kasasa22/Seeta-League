@@ -11,7 +11,7 @@ export async function GET(req: Request, { params }: any) {
 }
 
 export async function PUT(req: Request, { params }: any) {
-  if (!isAdminRequest()) return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdminRequest())) return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
   const { id } = params
   const body = await req.json()
   const supabase = await createClient()
@@ -21,7 +21,7 @@ export async function PUT(req: Request, { params }: any) {
 }
 
 export async function DELETE(req: Request, { params }: any) {
-  if (!isAdminRequest()) return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdminRequest())) return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
   const { id } = params
   const supabase = await createClient()
   const { error } = await supabase.from('notices').delete().eq('id', id)

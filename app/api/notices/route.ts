@@ -10,7 +10,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  if (!isAdminRequest()) return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdminRequest())) return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
   const { title, body: content, author_email, image_url, is_published } = body

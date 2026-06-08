@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getSelectedSeason } from "@/lib/seasons"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -7,21 +8,21 @@ import { ArrowLeft, Trophy, TrendingUp, TrendingDown, Medal, Target, Users } fro
 
 export default async function TablePage() {
   const supabase = await createClient()
+  const season = await getSelectedSeason()
 
-  // Try to get standings from the view first
-  const { data: standings, error: standingsError } = await supabase
+  let standingsQuery = supabase
     .from("league_standings")
     .select("*")
     .order("points", { ascending: false })
+  if (season) standingsQuery = standingsQuery.eq("season_id", season.id)
+  const { data: standings } = await standingsQuery
 
-  // If no standings data, get teams and create basic standings
   let displayData = standings
 
   if (!standings || standings.length === 0) {
-    const { data: teams, error: teamsError } = await supabase
-      .from("teams")
-      .select("*")
-      .eq("is_active", true)
+    let teamsQuery = supabase.from("teams").select("*").eq("is_active", true)
+    if (season) teamsQuery = teamsQuery.eq("season_id", season.id)
+    const { data: teams } = await teamsQuery
 
     if (teams && teams.length > 0) {
       // Create basic standings structure for teams without match data
@@ -46,20 +47,18 @@ export default async function TablePage() {
   let topAssists = null
 
   try {
-    const { data: scorersData } = await supabase
-      .from("top_scorers")
-      .select("*")
-      .limit(5)
+    let scorersQuery = supabase.from("top_scorers").select("*").order("goals", { ascending: false }).limit(5)
+    if (season) scorersQuery = scorersQuery.eq("season_id", season.id)
+    const { data: scorersData } = await scorersQuery
     topScorers = scorersData
   } catch (error) {
     console.log("Top scorers view not available yet")
   }
 
   try {
-    const { data: assistsData } = await supabase
-      .from("top_assists")
-      .select("*")
-      .limit(5)
+    let assistsQuery = supabase.from("top_assists").select("*").order("assists", { ascending: false }).limit(5)
+    if (season) assistsQuery = assistsQuery.eq("season_id", season.id)
+    const { data: assistsData } = await assistsQuery
     topAssists = assistsData
   } catch (error) {
     console.log("Top assists view not available yet")
@@ -110,7 +109,7 @@ export default async function TablePage() {
               <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-accent" />
               <div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight">League Table</h1>
-                <p className="mt-1 text-sm sm:text-base md:text-lg text-white/90">Current standings - Season 2025</p>
+                <p className="mt-1 text-sm sm:text-base md:text-lg text-white/90">Current standings - {season?.name ?? "Season"}</p>
               </div>
             </div>
           </div>

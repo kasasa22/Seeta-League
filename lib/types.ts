@@ -1,3 +1,19 @@
+export interface Season {
+  id: string
+  name: string
+  slug: string
+  year: number | null
+  kickoff_date: string | null
+  registration_deadline: string | null
+  venue: string | null
+  registration_fee: number | null
+  status: string
+  is_current: boolean
+  champion_team_id: string | null
+  runner_up_team_id: string | null
+  created_at: string
+}
+
 export interface Team {
   id: string
   name: string
@@ -5,6 +21,9 @@ export interface Team {
   contact_phone: string | null
   contact_email: string | null
   is_active: boolean
+  season_id: string | null
+  logo_url: string | null
+  captain_id: string | null
   created_at: string
 }
 
@@ -19,6 +38,7 @@ export interface Match {
   home_score: number | null
   away_score: number | null
   is_completed: boolean
+  season_id: string | null
   created_at: string
   home_team?: Team
   away_team?: Team
@@ -35,6 +55,7 @@ export interface LeagueStanding {
   goals_against: number
   goal_difference: number
   points: number
+  season_id: string | null
 }
 
 export interface Player {
@@ -47,6 +68,8 @@ export interface Player {
   contact_phone: string | null
   contact_email: string | null
   is_active: boolean
+  season_id: string | null
+  photo_url: string | null
   created_at: string
   team?: Team
 }

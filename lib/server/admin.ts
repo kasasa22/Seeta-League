@@ -1,20 +1,28 @@
-import { cookies } from 'next/headers'
+import { createClient } from "@/lib/supabase/server"
 
-export function isAdminRequest(): boolean {
+export async function isAdminRequest(): Promise<boolean> {
   try {
-    const cookieStore = cookies()
-    const session = cookieStore.get('admin_session')
-    if (!session) return false
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return false
 
-    // Session stored as JSON string in cookie
-    const parsed = JSON.parse(session.value)
-    // Basic check for role and expiry (24h)
-    if (!parsed?.role) return false
-    const loginTime = new Date(parsed.loginTime)
-    const now = new Date()
-    const hoursDiff = (now.getTime() - loginTime.getTime()) / (1000 * 60 * 60)
-    return hoursDiff <= 24 && parsed.role === 'super_admin'
-  } catch (err) {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role:roles(key, role_permissions(permission_key))")
+      .eq("user_id", user.id)
+
+    for (const ur of data ?? []) {
+      const role = (ur as any).role
+      if (!role) continue
+      if (role.key === "super_admin") return true
+      if ((role.role_permissions ?? []).some((rp: any) => rp.permission_key === "view_admin")) {
+        return true
+      }
+    }
+    return false
+  } catch {
     return false
   }
 }

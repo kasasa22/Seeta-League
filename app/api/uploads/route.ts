@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { isAdminRequest } from '@/lib/server/admin'
 
 export async function POST(req: Request) {
-  if (!isAdminRequest()) return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdminRequest())) return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
 
   try {
     const formData = await req.formData()

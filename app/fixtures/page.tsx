@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { ArrowLeft, Calendar } from "lucide-react"
 import { MatchSection } from "@/components/fixtures/match-section"
+import { getSelectedSeasonId } from "@/lib/seasons"
 
 export default async function FixturesPage() {
   const supabase = await createClient()
+  const seasonId = await getSelectedSeasonId()
 
-  const { data: fixtures } = await supabase
+  let fixturesQuery = supabase
     .from("matches")
     .select(
       "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
@@ -18,8 +20,10 @@ export default async function FixturesPage() {
     .eq("is_completed", false)
     .order("match_date", { ascending: true })
     .order("match_time", { ascending: true, nullsFirst: false })
+  if (seasonId) fixturesQuery = fixturesQuery.eq("season_id", seasonId)
+  const { data: fixtures } = await fixturesQuery
 
-  const { data: results } = await supabase
+  let resultsQuery = supabase
     .from("matches")
     .select(
       "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
@@ -27,6 +31,8 @@ export default async function FixturesPage() {
     .eq("is_completed", true)
     .order("match_date", { ascending: false })
     .order("match_time", { ascending: false, nullsFirst: true })
+  if (seasonId) resultsQuery = resultsQuery.eq("season_id", seasonId)
+  const { data: results } = await resultsQuery
 
   return (
     <div className="min-h-screen bg-background">
