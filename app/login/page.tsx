@@ -88,6 +88,11 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              <div className="text-right">
+                <Link href="/forgot-password" className="text-xs text-emerald-400 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             {error && (
@@ -116,9 +121,14 @@ export default function LoginPage() {
             </Button>
 
             <p className="text-center text-sm text-slate-400">
-              Are you a team captain?{' '}
+              Need an account?{' '}
               <Link href="/register" className="text-emerald-400 hover:underline">
-                Register here
+                Register
+              </Link>
+            </p>
+            <p className="text-center text-sm text-slate-400">
+              <Link href="/" className="text-slate-300 hover:text-white hover:underline">
+                ← Back to the public site
               </Link>
             </p>
           </form>

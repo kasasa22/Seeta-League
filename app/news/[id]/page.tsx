@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { sanitizeHtml } from "@/lib/sanitize"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -117,11 +118,11 @@ export default async function BlogPostPage({
       {/* Featured Image */}
       <div className="container mx-auto px-4 mb-8">
         <div className="max-w-6xl mx-auto">
-          <div className="relative aspect-[21/9] rounded-xl overflow-hidden shadow-2xl">
+          <div className="relative rounded-xl overflow-hidden shadow-2xl bg-muted">
             <img
               src={blog.image_url || "/football-match-action.png"}
               alt={blog.title}
-              className="h-full w-full object-cover"
+              className="mx-auto max-h-[75vh] w-auto max-w-full object-contain"
             />
           </div>
         </div>
@@ -146,7 +147,7 @@ export default async function BlogPostPage({
                   [&_strong]:text-foreground [&_strong]:font-semibold
                   [&_a]:text-emerald-500 [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-emerald-400
                 "
-                dangerouslySetInnerHTML={{ __html: blog.body }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(blog.body) }}
               />
 
               {/* Tags */}

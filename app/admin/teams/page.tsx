@@ -5,15 +5,22 @@ import Link from "next/link"
 import { TeamsList } from "@/components/admin/teams-list"
 import { AddTeamDialog } from "@/components/admin/add-team-dialog"
 import { ArrowLeft, Users } from "lucide-react"
+import { getSelectedSeasonId } from "@/lib/seasons"
+import { requireAnyPermission, userHasPermission } from "@/lib/rbac"
 
 export default async function TeamsPage() {
+  const me = await requireAnyPermission(["manage_teams", "view_teams"])
+  const canManage = userHasPermission(me, "manage_teams")
   const supabase = await createClient()
+  const seasonId = await getSelectedSeasonId()
 
-  const { data: teams } = await supabase.from("teams").select("*").order("name", { ascending: true })
+  let teamsQuery = supabase.from("teams").select("*").order("name", { ascending: true })
+  if (seasonId) teamsQuery = teamsQuery.eq("season_id", seasonId)
+  const { data: teams } = await teamsQuery
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-3 sm:p-6">
-      <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
+    <div className="p-3 sm:p-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1 sm:space-y-2">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -35,10 +42,10 @@ export default async function TeamsPage() {
         <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6">
             <CardTitle className="text-xl sm:text-2xl text-white">Registered Teams</CardTitle>
-            <AddTeamDialog />
+            {canManage && <AddTeamDialog />}
           </CardHeader>
           <CardContent>
-            <TeamsList teams={teams || []} />
+            <TeamsList teams={teams || []} canManage={canManage} />
           </CardContent>
         </Card>
       </div>

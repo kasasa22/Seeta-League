@@ -5,8 +5,8 @@ import { AdminAuthWrapper } from "@/components/admin/admin-auth-wrapper"
 export default function AdminTest() {
   return (
     <AdminAuthWrapper>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6">
-        <div className="mx-auto max-w-4xl">
+      <div className="p-6">
+        <div className="">
           <h1 className="text-4xl font-bold text-white mb-8">Admin Test Page</h1>
           <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-lg p-6">
             <h2 className="text-2xl font-bold text-emerald-400 mb-4">✅ Authentication Working!</h2>

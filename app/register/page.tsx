@@ -54,8 +54,8 @@ export default function RegisterPage() {
             </div>
             <CardTitle className="text-2xl font-bold text-white">Registration Received</CardTitle>
             <CardDescription className="text-slate-300">
-              Your captain account is pending approval by the Super Admin. You will be able to
-              register your team and players once approved.
+              Your account is pending approval. The Super Admin will review it and assign your role,
+              after which you can access your portal.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
@@ -77,9 +77,9 @@ export default function RegisterPage() {
           <div className="mx-auto mb-3 sm:mb-4 rounded-lg bg-emerald-500 p-2 sm:p-3 w-fit">
             <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
           </div>
-          <CardTitle className="text-xl sm:text-2xl font-bold text-white">Captain Registration</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-bold text-white">Create an Account</CardTitle>
           <CardDescription className="text-sm sm:text-base text-slate-300">
-            Register to manage your team. Approval by the Super Admin is required before you can act.
+            Register to access your portal. The Super Admin will approve your account and assign your role.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
@@ -166,6 +166,11 @@ export default function RegisterPage() {
               Already have an account?{' '}
               <Link href="/login" className="text-emerald-400 hover:underline">
                 Sign in
+              </Link>
+            </p>
+            <p className="text-center text-sm text-slate-400">
+              <Link href="/" className="text-slate-300 hover:text-white hover:underline">
+                ← Back to the public site
               </Link>
             </p>
           </form>

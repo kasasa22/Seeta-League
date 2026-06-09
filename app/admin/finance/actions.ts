@@ -3,23 +3,20 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/rbac'
+import { getSelectedSeasonId } from '@/lib/seasons'
 
 export async function addFinanceRecord(formData: FormData) {
   const user = await requirePermission('manage_finance')
   const supabase = await createClient()
 
-  const { data: season } = await supabase
-    .from('seasons')
-    .select('id')
-    .eq('is_current', true)
-    .maybeSingle()
+  const seasonId = await getSelectedSeasonId()
 
   const amount = Number.parseFloat(String(formData.get('amount') ?? ''))
   const type = String(formData.get('type') ?? 'payment')
   if (!Number.isFinite(amount) || amount <= 0) return { ok: false, message: 'Enter a valid amount' }
 
   const { error } = await supabase.from('finance_records').insert({
-    season_id: season?.id ?? null,
+    season_id: seasonId,
     type,
     category: String(formData.get('category') ?? '') || null,
     team_id: formData.get('team_id') ? String(formData.get('team_id')) : null,

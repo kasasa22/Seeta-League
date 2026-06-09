@@ -4,20 +4,29 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, UserCircle } from "lucide-react"
 import { PlayersListComponent } from "@/components/admin/players-list"
+import { getSelectedSeasonId } from "@/lib/seasons"
+import { requireAnyPermission, userHasPermission } from "@/lib/rbac"
 
 export default async function PlayersPage() {
+  const me = await requireAnyPermission(["manage_players", "view_players"])
+  const canManage = userHasPermission(me, "manage_players")
   const supabase = await createClient()
+  const seasonId = await getSelectedSeasonId()
 
-  const { data: players } = await supabase
+  let playersQuery = supabase
     .from("players")
     .select("*, team:teams(name)")
     .order("created_at", { ascending: false })
+  if (seasonId) playersQuery = playersQuery.eq("season_id", seasonId)
+  const { data: players } = await playersQuery
 
-  const { data: teams } = await supabase.from("teams").select("*").eq("is_active", true).order("name")
+  let teamsQuery = supabase.from("teams").select("*").eq("is_active", true).order("name")
+  if (seasonId) teamsQuery = teamsQuery.eq("season_id", seasonId)
+  const { data: teams } = await teamsQuery
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-6">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className="p-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -42,7 +51,7 @@ export default async function PlayersPage() {
             <CardDescription className="text-slate-400">View all registered players and add new ones</CardDescription>
           </CardHeader>
           <CardContent>
-            <PlayersListComponent players={players || []} teams={teams || []} />
+            <PlayersListComponent players={players || []} teams={teams || []} canManage={canManage} />
           </CardContent>
         </Card>
       </div>

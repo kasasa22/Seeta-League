@@ -27,7 +27,7 @@ async function uploadFile(file: File): Promise<string | null> {
   return json.ok ? json.url : null
 }
 
-export function ActivitiesManager({ activities }: { activities: ActivityRow[] }) {
+export function ActivitiesManager({ activities, canManage = true }: { activities: ActivityRow[]; canManage?: boolean }) {
   const [isPending, startTransition] = useTransition()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -80,6 +80,7 @@ export function ActivitiesManager({ activities }: { activities: ActivityRow[] })
 
   return (
     <div className="space-y-6">
+      {canManage && (
       <Card className="border-slate-700 bg-slate-800/50">
         <CardContent className="p-5 space-y-4">
           <h2 className="font-bold text-white">New activity</h2>
@@ -147,6 +148,7 @@ export function ActivitiesManager({ activities }: { activities: ActivityRow[] })
           </Button>
         </CardContent>
       </Card>
+      )}
 
       <Card className="border-slate-700 bg-slate-800/50">
         <CardContent className="p-5">
@@ -167,20 +169,24 @@ export function ActivitiesManager({ activities }: { activities: ActivityRow[] })
                     <Badge className={a.is_published ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600 text-white'}>
                       {a.is_published ? 'Published' : 'Draft'}
                     </Badge>
-                    <button
-                      onClick={() => startTransition(async () => { await togglePublish(a.id, !a.is_published) })}
-                      disabled={isPending}
-                      className="text-slate-400 hover:text-white"
-                    >
-                      {a.is_published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                    <button
-                      onClick={() => startTransition(async () => { await deleteActivity(a.id) })}
-                      disabled={isPending}
-                      className="text-slate-400 hover:text-red-400"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {canManage && (
+                      <>
+                        <button
+                          onClick={() => startTransition(async () => { await togglePublish(a.id, !a.is_published) })}
+                          disabled={isPending}
+                          className="text-slate-400 hover:text-white"
+                        >
+                          {a.is_published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                        <button
+                          onClick={() => startTransition(async () => { await deleteActivity(a.id) })}
+                          disabled={isPending}
+                          className="text-slate-400 hover:text-red-400"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

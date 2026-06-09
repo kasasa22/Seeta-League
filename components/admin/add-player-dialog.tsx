@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import type { Team, Player } from "@/lib/types"
+import { Upload, UserCircle } from "lucide-react"
+import { toast } from "sonner"
 
 interface AddPlayerDialogProps {
   open: boolean
@@ -27,9 +29,31 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
   const [dateOfBirth, setDateOfBirth] = useState("")
   const [contactPhone, setContactPhone] = useState("")
   const [contactEmail, setContactEmail] = useState("")
+  const [photoUrl, setPhotoUrl] = useState("")
+  const [uploading, setUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  const onPhoto = async (file?: File) => {
+    if (!file) return
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch("/api/uploads", { method: "POST", body: fd })
+      const j = await res.json()
+      if (j.ok && j.url) {
+        setPhotoUrl(j.url)
+        toast.success("Photo uploaded")
+      } else {
+        toast.error(j.message || "Upload failed")
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed")
+    }
+    setUploading(false)
+  }
 
   useEffect(() => {
     if (editingPlayer) {
@@ -40,6 +64,7 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
       setDateOfBirth(editingPlayer.date_of_birth || "")
       setContactPhone(editingPlayer.contact_phone || "")
       setContactEmail(editingPlayer.contact_email || "")
+      setPhotoUrl((editingPlayer as any).photo_url || "")
     } else {
       resetForm()
     }
@@ -53,6 +78,7 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
     setDateOfBirth("")
     setContactPhone("")
     setContactEmail("")
+    setPhotoUrl("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,6 +93,7 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
       date_of_birth: dateOfBirth || null,
       contact_phone: contactPhone || null,
       contact_email: contactEmail || null,
+      photo_url: photoUrl || null,
     }
 
     let error
@@ -100,6 +127,24 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Profile Photo</Label>
+            <div className="flex items-center gap-3">
+              {photoUrl ? (
+                <img src={photoUrl} alt="player" className="h-16 w-16 rounded-full object-cover" />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-800 text-slate-500">
+                  <UserCircle className="h-8 w-8" />
+                </div>
+              )}
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white hover:bg-slate-700">
+                <Upload className="h-4 w-4" />
+                {uploading ? "Uploading..." : photoUrl ? "Change photo" : "Upload photo"}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => onPhoto(e.target.files?.[0])} />
+              </label>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">Player Name *</Label>
             <Input
@@ -201,7 +246,7 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-cyan-600 hover:bg-cyan-700">
+            <Button type="submit" disabled={isSubmitting || uploading} className="bg-cyan-600 hover:bg-cyan-700">
               {isSubmitting ? "Saving..." : editingPlayer ? "Update Player" : "Add Player"}
             </Button>
           </div>

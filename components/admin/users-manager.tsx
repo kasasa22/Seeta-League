@@ -25,6 +25,7 @@ interface Props {
   roles: RoleRef[]
   teams: NamedRef[]
   seasons: NamedRef[]
+  canManage: boolean
 }
 
 const statusBadge: Record<string, string> = {
@@ -33,7 +34,7 @@ const statusBadge: Record<string, string> = {
   suspended: 'bg-red-500/20 text-red-400',
 }
 
-export function UsersManager({ users, roles, teams, seasons }: Props) {
+export function UsersManager({ users, roles, teams, seasons, canManage }: Props) {
   const [isPending, startTransition] = useTransition()
   const [picks, setPicks] = useState<Record<string, { roleId: string; teamId: string; seasonId: string }>>({})
 
@@ -109,13 +110,16 @@ export function UsersManager({ users, roles, teams, seasons }: Props) {
                     {ur.role?.name ?? 'role'}
                     {ur.team ? ` · ${ur.team.name}` : ''}
                     {ur.season ? ` · ${ur.season.name}` : ''}
-                    <button onClick={() => onRemoveRole(ur.id)} disabled={isPending} className="ml-1 text-slate-400 hover:text-red-400">
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+                    {canManage && (
+                      <button onClick={() => onRemoveRole(ur.id)} disabled={isPending} className="ml-1 text-slate-400 hover:text-red-400">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
                   </span>
                 ))}
               </div>
 
+              {canManage && (
               <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-700 pt-4">
                 {u.status !== 'approved' && (
                   <Button size="sm" onClick={() => onStatus(u.id, 'approved')} disabled={isPending} className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white">
@@ -166,6 +170,7 @@ export function UsersManager({ users, roles, teams, seasons }: Props) {
                   Assign role
                 </Button>
               </div>
+              )}
             </CardContent>
           </Card>
         )

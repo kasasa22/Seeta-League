@@ -15,12 +15,20 @@ export async function createRole(formData: FormData) {
   if (!name) return
 
   const supabase = await createClient()
-  await supabase.from('roles').insert({
-    key: slugify(name),
-    name,
-    description: description || null,
-    is_system: false,
-  })
+  const { data: role } = await supabase
+    .from('roles')
+    .insert({
+      key: slugify(name),
+      name,
+      description: description || null,
+      is_system: false,
+    })
+    .select('id')
+    .single()
+
+  if (role) {
+    await supabase.from('role_permissions').insert({ role_id: role.id, permission_key: 'view_admin' })
+  }
   revalidatePath('/admin/roles')
 }
 

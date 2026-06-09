@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { sendMessage, replyMessage, setMessageStatus } from '@/app/admin/messages/actions'
 
 interface RoleRef { key: string; name: string }
+interface DirectoryEntry { role_key: string; user_id: string; display_name: string }
 interface PersonRef { full_name: string | null; email: string | null }
 interface Reply { id: string; body: string; created_at: string; author: PersonRef | null }
 interface MessageRow {
@@ -18,6 +19,7 @@ interface MessageRow {
   subject: string
   body: string | null
   to_role: string
+  to_user_id: string | null
   status: string
   created_at: string
   from: PersonRef | null
@@ -26,6 +28,7 @@ interface MessageRow {
 interface Props {
   messages: MessageRow[]
   roles: RoleRef[]
+  directory: DirectoryEntry[]
   myRoleKeys: string[]
   isSuper: boolean
 }
@@ -38,10 +41,15 @@ const statusColor: Record<string, string> = {
 
 const who = (p: PersonRef | null) => p?.full_name || p?.email || 'Unknown'
 
-export function MessagesManager({ messages, roles, myRoleKeys, isSuper }: Props) {
+export function MessagesManager({ messages, roles, directory, myRoleKeys, isSuper }: Props) {
   const [isPending, startTransition] = useTransition()
   const [replyText, setReplyText] = useState<Record<string, string>>({})
+  const [composeRole, setComposeRole] = useState('')
+  const [composeUser, setComposeUser] = useState('')
   const roleName = (key: string) => roles.find((r) => r.key === key)?.name ?? key
+  const userName = (id: string | null) =>
+    id ? directory.find((d) => d.user_id === id)?.display_name ?? 'a user' : null
+  const usersInRole = directory.filter((d) => d.role_key === composeRole)
 
   const onSend = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -50,6 +58,8 @@ export function MessagesManager({ messages, roles, myRoleKeys, isSuper }: Props)
     startTransition(async () => {
       const res = await sendMessage(fd)
       if (res?.ok) {
+        setComposeRole('')
+        setComposeUser('')
         toast.success('Message sent')
         form.reset()
       } else {
@@ -87,7 +97,16 @@ export function MessagesManager({ messages, roles, myRoleKeys, isSuper }: Props)
               </div>
               <div className="space-y-1">
                 <Label className="text-white text-xs">Send to role</Label>
-                <select name="to_role" required className="h-9 w-full rounded-md border border-slate-600 bg-slate-700/50 px-2 text-sm text-white">
+                <select
+                  name="to_role"
+                  required
+                  value={composeRole}
+                  onChange={(e) => {
+                    setComposeRole(e.target.value)
+                    setComposeUser('')
+                  }}
+                  className="h-9 w-full rounded-md border border-slate-600 bg-slate-700/50 px-2 text-sm text-white"
+                >
                   <option value="">Select a role</option>
                   {roles.map((r) => (
                     <option key={r.key} value={r.key}>{r.name}</option>
@@ -95,6 +114,25 @@ export function MessagesManager({ messages, roles, myRoleKeys, isSuper }: Props)
                 </select>
               </div>
             </div>
+            {composeRole && (
+              <div className="space-y-1">
+                <Label className="text-white text-xs">Direct to (optional)</Label>
+                <select
+                  name="to_user_id"
+                  value={composeUser}
+                  onChange={(e) => setComposeUser(e.target.value)}
+                  className="h-9 w-full rounded-md border border-slate-600 bg-slate-700/50 px-2 text-sm text-white"
+                >
+                  <option value="">Anyone in {roleName(composeRole)}</option>
+                  {usersInRole.map((u) => (
+                    <option key={u.user_id} value={u.user_id}>{u.display_name}</option>
+                  ))}
+                </select>
+                {usersInRole.length === 0 && (
+                  <p className="text-xs text-slate-500">No users assigned to this role yet — it will go to the whole role.</p>
+                )}
+              </div>
+            )}
             <div className="space-y-1">
               <Label className="text-white text-xs">Message</Label>
               <textarea name="body" rows={3} className="w-full rounded-md border border-slate-600 bg-slate-700/50 p-2 text-sm text-white" />
@@ -119,7 +157,8 @@ export function MessagesManager({ messages, roles, myRoleKeys, isSuper }: Props)
                     <div>
                       <p className="font-semibold text-white">{m.subject}</p>
                       <p className="text-xs text-slate-400">
-                        From {who(m.from)} → {roleName(m.to_role)} · {new Date(m.created_at).toLocaleDateString()}
+                        From {who(m.from)} → {roleName(m.to_role)}
+                        {m.to_user_id && ` · to ${userName(m.to_user_id)}`} · {new Date(m.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <Badge className={statusColor[m.status] ?? 'bg-slate-600 text-white'}>{m.status}</Badge>

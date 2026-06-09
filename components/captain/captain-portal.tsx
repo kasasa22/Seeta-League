@@ -41,12 +41,15 @@ interface Props {
   deadlinePassed: boolean
 }
 
-async function uploadFile(file: File): Promise<string | null> {
-  const fd = new FormData()
-  fd.set('file', file)
-  const res = await fetch('/api/uploads', { method: 'POST', body: fd })
-  const json = await res.json()
-  return json.ok ? json.url : null
+async function uploadFile(file: File): Promise<{ ok: boolean; url?: string; message?: string }> {
+  try {
+    const fd = new FormData()
+    fd.set('file', file)
+    const res = await fetch('/api/uploads', { method: 'POST', body: fd })
+    return await res.json()
+  } catch (e: any) {
+    return { ok: false, message: e?.message || 'Network error' }
+  }
 }
 
 export function CaptainPortal({ season, team, players, deadlinePassed }: Props) {
@@ -94,13 +97,13 @@ function TeamForm() {
   const onLogo = async (file: File | undefined) => {
     if (!file) return
     setUploading(true)
-    const url = await uploadFile(file)
+    const res = await uploadFile(file)
     setUploading(false)
-    if (url) {
-      setLogoUrl(url)
+    if (res.ok && res.url) {
+      setLogoUrl(res.url)
       toast.success('Logo uploaded')
     } else {
-      toast.error('Logo upload failed')
+      toast.error(res.message || 'Logo upload failed')
     }
   }
 
@@ -162,13 +165,13 @@ function PlayerForm({ teamId }: { teamId: string }) {
   const onPhoto = async (file: File | undefined) => {
     if (!file) return
     setUploading(true)
-    const url = await uploadFile(file)
+    const res = await uploadFile(file)
     setUploading(false)
-    if (url) {
-      setPhotoUrl(url)
+    if (res.ok && res.url) {
+      setPhotoUrl(res.url)
       toast.success('Photo uploaded')
     } else {
-      toast.error('Photo upload failed')
+      toast.error(res.message || 'Photo upload failed')
     }
   }
 
@@ -212,7 +215,18 @@ function PlayerForm({ teamId }: { teamId: string }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="position" className="text-white">Position</Label>
-              <Input id="position" name="position" placeholder="Goalkeeper / Defender / ..." className="border-slate-600 bg-slate-700/50 text-white" />
+              <select
+                id="position"
+                name="position"
+                defaultValue=""
+                className="h-10 w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 text-sm text-white"
+              >
+                <option value="">Select position</option>
+                <option value="Goalkeeper">Goalkeeper</option>
+                <option value="Defender">Defender</option>
+                <option value="Midfielder">Midfielder</option>
+                <option value="Forward">Forward</option>
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="dob" className="text-white">Date of Birth</Label>

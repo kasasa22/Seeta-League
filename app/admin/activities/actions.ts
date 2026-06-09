@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/rbac'
+import { getSelectedSeasonId } from '@/lib/seasons'
 
 interface ActivityImageInput {
   url: string
@@ -21,16 +22,12 @@ export async function createActivity(input: CreateActivityInput) {
   if (!input.title.trim()) return { ok: false, message: 'Title is required' }
 
   const supabase = await createClient()
-  const { data: season } = await supabase
-    .from('seasons')
-    .select('id')
-    .eq('is_current', true)
-    .maybeSingle()
+  const seasonId = await getSelectedSeasonId()
 
   const { data: activity, error } = await supabase
     .from('activities')
     .insert({
-      season_id: season?.id ?? null,
+      season_id: seasonId,
       title: input.title.trim(),
       body: input.body || null,
       cover_image_url: input.coverImageUrl || null,

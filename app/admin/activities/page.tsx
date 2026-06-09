@@ -1,11 +1,12 @@
 import Link from 'next/link'
-import { ArrowLeft, Newspaper } from 'lucide-react'
+import { Newspaper } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { requirePermission } from '@/lib/rbac'
+import { requireAnyPermission, userHasPermission } from '@/lib/rbac'
 import { ActivitiesManager } from '@/components/coordinator/activities-manager'
 
 export default async function AdminActivitiesPage() {
-  await requirePermission('post_news')
+  const me = await requireAnyPermission(['post_news', 'manage_news', 'view_news'])
+  const canManage = userHasPermission(me, 'post_news') || userHasPermission(me, 'manage_news')
   const supabase = await createClient()
 
   const { data: activities } = await supabase
@@ -14,11 +15,8 @@ export default async function AdminActivitiesPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4 sm:p-6 pt-20">
-      <div className="mx-auto max-w-4xl">
-        <Link href="/admin" className="inline-flex items-center gap-2 text-slate-300 hover:text-white mb-6">
-          <ArrowLeft className="h-4 w-4" /> Back to Admin
-        </Link>
+    <div className="p-4 sm:p-6">
+      <div className="">
         <div className="flex items-center gap-3 mb-8">
           <div className="rounded-lg bg-emerald-500 p-2">
             <Newspaper className="h-6 w-6 text-white" />
@@ -29,7 +27,7 @@ export default async function AdminActivitiesPage() {
           </div>
         </div>
 
-        <ActivitiesManager activities={(activities as any) ?? []} />
+        <ActivitiesManager activities={(activities as any) ?? []} canManage={canManage} />
       </div>
     </div>
   )

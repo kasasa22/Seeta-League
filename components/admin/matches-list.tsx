@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { EditMatchDialog } from "@/components/admin/edit-match-dialog"
 
-export function MatchesList({ matches }: { matches: Match[] }) {
+export function MatchesList({ matches, canManage = true }: { matches: Match[]; canManage?: boolean }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -84,18 +84,22 @@ export function MatchesList({ matches }: { matches: Match[] }) {
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-2">
-                  {match.is_completed && <EditMatchDialog match={match} />}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(match.id)}
-                    disabled={deleting === match.id}
-                    className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                {canManage ? (
+                  <div className="flex items-center justify-end gap-2">
+                    {match.is_completed && <EditMatchDialog match={match} />}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(match.id)}
+                      disabled={deleting === match.id}
+                      className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <span className="text-slate-600">—</span>
+                )}
               </TableCell>
             </TableRow>
           ))}

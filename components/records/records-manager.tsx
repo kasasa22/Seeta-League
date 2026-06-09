@@ -28,9 +28,10 @@ interface Props {
   players: PlayerRow[]
   motm: MotmRow[]
   outstanding: OutstandingRow[]
+  canManage?: boolean
 }
 
-export function RecordsManager({ seasonId, matches, players, motm, outstanding }: Props) {
+export function RecordsManager({ seasonId, matches, players, motm, outstanding, canManage = true }: Props) {
   const [isPending, startTransition] = useTransition()
   const [picks, setPicks] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {}
@@ -90,21 +91,27 @@ export function RecordsManager({ seasonId, matches, players, motm, outstanding }
                       {m.home_team?.name} {m.home_score}–{m.away_score} {m.away_team?.name}
                       <span className="ml-2 text-xs text-slate-400">MD {m.match_day}</span>
                     </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <select
-                        value={picks[m.id] ?? ''}
-                        onChange={(e) => setPicks((p) => ({ ...p, [m.id]: e.target.value }))}
-                        className="h-9 flex-1 min-w-[180px] rounded-md border border-slate-600 bg-slate-700/50 px-2 text-sm text-white"
-                      >
-                        <option value="">— No MOTM —</option>
-                        {opts.map((pl) => (
-                          <option key={pl.id} value={pl.id}>{pl.name}</option>
-                        ))}
-                      </select>
-                      <Button size="sm" onClick={() => save(m.id)} disabled={isPending} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                        Save
-                      </Button>
-                    </div>
+                    {canManage ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <select
+                          value={picks[m.id] ?? ''}
+                          onChange={(e) => setPicks((p) => ({ ...p, [m.id]: e.target.value }))}
+                          className="h-9 flex-1 min-w-[180px] rounded-md border border-slate-600 bg-slate-700/50 px-2 text-sm text-white"
+                        >
+                          <option value="">— No MOTM —</option>
+                          {opts.map((pl) => (
+                            <option key={pl.id} value={pl.id}>{pl.name}</option>
+                          ))}
+                        </select>
+                        <Button size="sm" onClick={() => save(m.id)} disabled={isPending} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                          Save
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-slate-300">
+                        Man of the Match: <span className="font-semibold text-white">{opts.find((pl) => pl.id === picks[m.id])?.name ?? '—'}</span>
+                      </p>
+                    )}
                   </div>
                 )
               })}

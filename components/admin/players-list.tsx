@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, UserCircle } from "lucide-react"
+import { Plus, Pencil, Trash2, UserCircle, Eye } from "lucide-react"
 import type { Player, Team } from "@/lib/types"
 import { AddPlayerDialog } from "./add-player-dialog"
 import { createClient } from "@/lib/supabase/client"
@@ -11,9 +12,10 @@ import { useRouter } from "next/navigation"
 interface PlayersListProps {
   players: (Player & { team?: { name: string } })[]
   teams: Team[]
+  canManage?: boolean
 }
 
-export function PlayersListComponent({ players, teams }: PlayersListProps) {
+export function PlayersListComponent({ players, teams, canManage = true }: PlayersListProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null)
   const router = useRouter()
@@ -43,12 +45,14 @@ export function PlayersListComponent({ players, teams }: PlayersListProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2 bg-cyan-600 hover:bg-cyan-700">
-          <Plus className="h-4 w-4" />
-          Add Player
-        </Button>
-      </div>
+      {canManage && (
+        <div className="flex justify-end">
+          <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2 bg-cyan-600 hover:bg-cyan-700">
+            <Plus className="h-4 w-4" />
+            Add Player
+          </Button>
+        </div>
+      )}
 
       {players.length === 0 ? (
         <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-12 text-center">
@@ -73,12 +77,27 @@ export function PlayersListComponent({ players, teams }: PlayersListProps) {
               {players.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-900/30">
                   <td className="px-6 py-4">
-                    <div className="font-medium text-white">{player.name}</div>
-                    {player.date_of_birth && (
-                      <div className="text-sm text-slate-400">
-                        DOB: {new Date(player.date_of_birth).toLocaleDateString()}
+                    <div className="flex items-center gap-3">
+                      {player.photo_url ? (
+                        <img
+                          src={player.photo_url}
+                          alt={player.name}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-slate-300">
+                          {player.name?.charAt(0) ?? "?"}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-medium text-white">{player.name}</div>
+                        {player.date_of_birth && (
+                          <div className="text-sm text-slate-400">
+                            DOB: {new Date(player.date_of_birth).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-sm font-medium text-cyan-300">
@@ -95,22 +114,35 @@ export function PlayersListComponent({ players, teams }: PlayersListProps) {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(player)}
-                        className="text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(player.id)}
-                        className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Link href={`/admin/players/${player.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      {canManage && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(player)}
+                            className="text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(player.id)}
+                            className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

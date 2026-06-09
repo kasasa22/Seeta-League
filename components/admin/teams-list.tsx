@@ -4,12 +4,13 @@ import type { Team } from "@/lib/types"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Trash2, Mail, Phone, User } from "lucide-react"
+import { Trash2, Mail, Phone, User, Shield, Eye } from "lucide-react"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-export function TeamsList({ teams }: { teams: Team[] }) {
+export function TeamsList({ teams, canManage = true }: { teams: Team[]; canManage?: boolean }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -47,7 +48,22 @@ export function TeamsList({ teams }: { teams: Team[] }) {
         <TableBody>
           {teams.map((team) => (
             <TableRow key={team.id} className="border-slate-700 hover:bg-slate-800/50">
-              <TableCell className="font-semibold text-white">{team.name}</TableCell>
+              <TableCell className="font-semibold text-white">
+                <div className="flex items-center gap-3">
+                  {team.logo_url ? (
+                    <img
+                      src={team.logo_url}
+                      alt={team.name}
+                      className="h-9 w-9 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-800 text-slate-500">
+                      <Shield className="h-4 w-4" />
+                    </div>
+                  )}
+                  <span>{team.name}</span>
+                </div>
+              </TableCell>
               <TableCell className="text-slate-300">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-slate-500" />
@@ -80,15 +96,28 @@ export function TeamsList({ teams }: { teams: Team[] }) {
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(team.id)}
-                  disabled={deleting === team.id}
-                  className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex justify-end gap-2">
+                  <Link href={`/admin/teams/${team.id}`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  {canManage && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(team.id)}
+                      disabled={deleting === team.id}
+                      className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}

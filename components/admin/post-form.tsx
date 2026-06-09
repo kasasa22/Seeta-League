@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
+import { RichTextEditor } from '@/components/admin/rich-text-editor'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface PostFormProps {
   onSaved?: () => void
@@ -30,12 +31,16 @@ export function PostForm({ onSaved, endpoint, initial }: PostFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!body.replace(/<[^>]*>/g, '').trim()) {
+      toast.error('Body is required')
+      return
+    }
     setIsSaving(true)
     try {
       let image_url = initial?.image_url || null
       if (image) image_url = await uploadImage(image)
 
-      const payload = { title, body, image_url, is_published: true }
+      const payload = { title, body: sanitizeHtml(body), image_url, is_published: true }
       const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await res.json()
       if (!res.ok) throw new Error(j.message || 'Save failed')
@@ -56,7 +61,7 @@ export function PostForm({ onSaved, endpoint, initial }: PostFormProps) {
       </div>
       <div>
         <Label>Body</Label>
-        <Textarea value={body} onChange={(e) => setBody(e.target.value)} required rows={6} />
+        <RichTextEditor value={body} onChange={setBody} placeholder="Write the content. Use the toolbar for headings, bold and lists." />
       </div>
       <div>
         <Label>Image</Label>

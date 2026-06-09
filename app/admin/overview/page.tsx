@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { ArrowLeft, Eye, Users, UserCircle, Wallet, MessagesSquare, Trophy } from 'lucide-react'
+import { Eye, Users, UserCircle, Wallet, MessagesSquare, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { requireAnyPermission } from '@/lib/rbac'
+import { getSelectedSeason } from '@/lib/seasons'
 import { Card, CardContent } from '@/components/ui/card'
 
 const ugx = (n: number) => 'UGX ' + new Intl.NumberFormat('en-US').format(n)
@@ -10,11 +11,7 @@ export default async function OverviewPage() {
   await requireAnyPermission(['view_all'])
   const supabase = await createClient()
 
-  const { data: season } = await supabase
-    .from('seasons')
-    .select('id, name')
-    .eq('is_current', true)
-    .maybeSingle()
+  const season = await getSelectedSeason()
 
   const sid = season?.id ?? null
   const seasonEq = <T,>(q: T): T => (sid ? (q as any).eq('season_id', sid) : q)
@@ -40,11 +37,8 @@ export default async function OverviewPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4 sm:p-6 pt-20">
-      <div className="mx-auto max-w-5xl">
-        <Link href="/admin" className="inline-flex items-center gap-2 text-slate-300 hover:text-white mb-6">
-          <ArrowLeft className="h-4 w-4" /> Back to Admin
-        </Link>
+    <div className="p-4 sm:p-6">
+      <div className="">
         <div className="flex items-center gap-3 mb-8">
           <div className="rounded-lg bg-emerald-500 p-2">
             <Eye className="h-6 w-6 text-white" />

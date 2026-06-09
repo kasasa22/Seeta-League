@@ -4,8 +4,7 @@ import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
-import { SiteHeader } from '@/components/site-header'
-import { SiteFooter } from '@/components/site-footer'
+import { AppChrome } from '@/components/app-chrome'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -34,13 +33,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="relative min-h-screen flex flex-col">
-            <SiteHeader />
-            <main className="flex-1">
-              {children}
-            </main>
-            <SiteFooter />
-          </div>
+          <AppChrome>{children}</AppChrome>
           <Toaster />
         </ThemeProvider>
         <Analytics />

@@ -3,15 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/rbac'
+import { getSelectedSeason } from '@/lib/seasons'
 
 async function currentSeason() {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('seasons')
-    .select('id, name, registration_deadline')
-    .eq('is_current', true)
-    .maybeSingle()
-  return data
+  return await getSelectedSeason()
 }
 
 export async function registerTeam(formData: FormData) {

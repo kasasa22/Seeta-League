@@ -4,19 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { EnhancedScoreEntry } from "@/components/admin/enhanced-score-entry"
 import { ArrowLeft, Trophy } from "lucide-react"
+import { getSelectedSeasonId } from "@/lib/seasons"
+import { requirePermission } from "@/lib/rbac"
 
 export default async function ScoresPage() {
+  await requirePermission("enter_scores")
   const supabase = await createClient()
+  const seasonId = await getSelectedSeasonId()
 
-  const { data: matches } = await supabase
+  let matchesQuery = supabase
     .from("matches")
     .select("*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)")
     .eq("is_completed", false)
     .order("match_date", { ascending: true })
+  if (seasonId) matchesQuery = matchesQuery.eq("season_id", seasonId)
+  const { data: matches } = await matchesQuery
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div className="p-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">

@@ -98,7 +98,15 @@ export function SiteFooter() {
               &copy; {new Date().getFullYear()} Seeta League. All rights reserved.
             </p>
             <p className="text-sm text-muted-foreground">
-              Made with passion for Seeta High School Alumni
+              Designed &amp; developed by{" "}
+              <a
+                href="https://kasasalivingstonetrevor.me/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-emerald-600 hover:underline dark:text-emerald-400"
+              >
+                Kasasa Livingstone Trevor
+              </a>
             </p>
           </div>
         </div>

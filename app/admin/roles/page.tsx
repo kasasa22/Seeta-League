@@ -1,11 +1,12 @@
 import Link from 'next/link'
-import { ArrowLeft, Shield } from 'lucide-react'
+import { Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { requirePermission } from '@/lib/rbac'
+import { requireAnyPermission, userHasPermission } from '@/lib/rbac'
 import { RolesManager } from '@/components/admin/roles-manager'
 
 export default async function AdminRolesPage() {
-  await requirePermission('manage_roles')
+  const me = await requireAnyPermission(['manage_roles', 'view_roles'])
+  const canManage = userHasPermission(me, 'manage_roles')
   const supabase = await createClient()
 
   const { data: roles } = await supabase
@@ -20,11 +21,8 @@ export default async function AdminRolesPage() {
     .order('category')
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4 sm:p-6 pt-20">
-      <div className="mx-auto max-w-6xl">
-        <Link href="/admin" className="inline-flex items-center gap-2 text-slate-300 hover:text-white mb-6">
-          <ArrowLeft className="h-4 w-4" /> Back to Admin
-        </Link>
+    <div className="p-4 sm:p-6">
+      <div className="">
         <div className="flex items-center gap-3 mb-8">
           <div className="rounded-lg bg-emerald-500 p-2">
             <Shield className="h-6 w-6 text-white" />
@@ -35,7 +33,7 @@ export default async function AdminRolesPage() {
           </div>
         </div>
 
-        <RolesManager roles={(roles as any) ?? []} permissions={permissions ?? []} />
+        <RolesManager roles={(roles as any) ?? []} permissions={permissions ?? []} canManage={canManage} />
       </div>
     </div>
   )

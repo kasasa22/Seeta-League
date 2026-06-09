@@ -22,9 +22,10 @@ interface RoleRow {
 interface Props {
   roles: RoleRow[]
   permissions: PermissionRef[]
+  canManage: boolean
 }
 
-export function RolesManager({ roles, permissions }: Props) {
+export function RolesManager({ roles, permissions, canManage }: Props) {
   const [isPending, startTransition] = useTransition()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -57,6 +58,7 @@ export function RolesManager({ roles, permissions }: Props) {
 
   return (
     <div className="space-y-6">
+      {canManage && (
       <Card className="border-slate-700 bg-slate-800/50">
         <CardContent className="p-4 sm:p-5">
           <h2 className="mb-3 font-bold text-white">Create a role</h2>
@@ -85,6 +87,7 @@ export function RolesManager({ roles, permissions }: Props) {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {roles.map((role) => {
         const enabled = new Set(role.role_permissions.map((rp) => rp.permission_key))

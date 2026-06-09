@@ -1,18 +1,16 @@
 import Link from 'next/link'
-import { ArrowLeft, Award } from 'lucide-react'
+import { Award } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { requireAnyPermission } from '@/lib/rbac'
+import { requireAnyPermission, userHasPermission } from '@/lib/rbac'
+import { getSelectedSeason } from '@/lib/seasons'
 import { RecordsManager } from '@/components/records/records-manager'
 
 export default async function RecordsPage() {
-  await requireAnyPermission(['enter_scores', 'edit_records'])
+  const me = await requireAnyPermission(['enter_scores', 'edit_records', 'view_records'])
+  const canManage = userHasPermission(me, 'enter_scores') || userHasPermission(me, 'edit_records')
   const supabase = await createClient()
 
-  const { data: season } = await supabase
-    .from('seasons')
-    .select('id, name')
-    .eq('is_current', true)
-    .maybeSingle()
+  const season = await getSelectedSeason()
 
   let matches: any[] = []
   let players: any[] = []
@@ -42,11 +40,8 @@ export default async function RecordsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4 sm:p-6 pt-20">
-      <div className="mx-auto max-w-4xl">
-        <Link href="/admin" className="inline-flex items-center gap-2 text-slate-300 hover:text-white mb-6">
-          <ArrowLeft className="h-4 w-4" /> Back to Admin
-        </Link>
+    <div className="p-4 sm:p-6">
+      <div className="">
         <div className="flex items-center gap-3 mb-8">
           <div className="rounded-lg bg-emerald-500 p-2">
             <Award className="h-6 w-6 text-white" />
@@ -69,6 +64,7 @@ export default async function RecordsPage() {
           players={players}
           motm={motm}
           outstanding={outstanding as any}
+          canManage={canManage}
         />
       </div>
     </div>

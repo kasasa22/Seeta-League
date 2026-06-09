@@ -4,10 +4,16 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Users, Calendar, Trophy, TrendingUp, ArrowRight, Home, UserCircle, Shield, UserCog, Wallet, Newspaper, MessagesSquare, Eye, Award } from "lucide-react"
 import { AdminAuthWrapper } from "@/components/admin/admin-auth-wrapper"
+import { getSelectedSeasonId } from "@/lib/seasons"
 import type { LeagueStanding } from "@/lib/types"
+
+function bySeason<T>(query: T, seasonId: string | null): T {
+  return seasonId ? (query as any).eq("season_id", seasonId) : query
+}
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
+  const seasonId = await getSelectedSeasonId()
 
   // Fetch dashboard stats with error handling
   let teams = null
@@ -16,7 +22,7 @@ export default async function AdminDashboard() {
   let upcomingMatches = null
 
   try {
-    const { data: teamsData } = await supabase.from("teams").select("*", { count: "exact" })
+    const { data: teamsData } = await bySeason(supabase.from("teams").select("*", { count: "exact" }), seasonId)
     teams = teamsData
   } catch (error) {
     console.error("Error fetching teams:", error)
@@ -24,7 +30,7 @@ export default async function AdminDashboard() {
   }
 
   try {
-    const { data: matchesData } = await supabase.from("matches").select("*", { count: "exact" })
+    const { data: matchesData } = await bySeason(supabase.from("matches").select("*", { count: "exact" }), seasonId)
     matches = matchesData
   } catch (error) {
     console.error("Error fetching matches:", error)
@@ -32,10 +38,10 @@ export default async function AdminDashboard() {
   }
 
   try {
-    const { data: completedData } = await supabase
-      .from("matches")
-      .select("*", { count: "exact" })
-      .eq("is_completed", true)
+    const { data: completedData } = await bySeason(
+      supabase.from("matches").select("*", { count: "exact" }).eq("is_completed", true),
+      seasonId
+    )
     completedMatches = completedData
   } catch (error) {
     console.error("Error fetching completed matches:", error)
@@ -43,10 +49,13 @@ export default async function AdminDashboard() {
   }
 
   try {
-    const { data: upcomingData } = await supabase
-      .from("matches")
-      .select("*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)")
-      .eq("is_completed", false)
+    const { data: upcomingData } = await bySeason(
+      supabase
+        .from("matches")
+        .select("*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)")
+        .eq("is_completed", false),
+      seasonId
+    )
       .order("match_date", { ascending: true })
       .limit(1)
       .single()
@@ -61,21 +70,19 @@ export default async function AdminDashboard() {
   let players = null
 
   try {
-    const { data: topTeams } = await supabase
-      .from("league_standings")
-      .select("*")
-      .order("points", { ascending: false })
-      .limit(7)
+    const { data: topTeams } = await bySeason(
+      supabase.from("league_standings").select("*").order("points", { ascending: false }).limit(7),
+      seasonId
+    )
 
     displayTeams = topTeams
 
     // If no standings data, get basic teams info
     if (!topTeams || topTeams.length === 0) {
-      const { data: basicTeams } = await supabase
-        .from("teams")
-        .select("*")
-        .eq("is_active", true)
-        .limit(7)
+      const { data: basicTeams } = await bySeason(
+        supabase.from("teams").select("*").eq("is_active", true).limit(7),
+        seasonId
+      )
 
       if (basicTeams && basicTeams.length > 0) {
         displayTeams = basicTeams.map((team, index) => ({
@@ -96,7 +103,7 @@ export default async function AdminDashboard() {
   }
 
   try {
-    const { data: playersData } = await supabase.from("players").select("*", { count: "exact" })
+    const { data: playersData } = await bySeason(supabase.from("players").select("*", { count: "exact" }), seasonId)
     players = playersData
   } catch (error) {
     console.error("Error fetching players:", error)
@@ -108,20 +115,20 @@ export default async function AdminDashboard() {
   let topAssists = null
 
   try {
-    const { data: scorersData } = await supabase
-      .from("top_scorers")
-      .select("*")
-      .limit(5)
+    const { data: scorersData } = await bySeason(
+      supabase.from("top_scorers").select("*").order("goals", { ascending: false }).limit(5),
+      seasonId
+    )
     topScorers = scorersData
   } catch (error) {
     console.log("Top scorers view not available yet")
   }
 
   try {
-    const { data: assistsData } = await supabase
-      .from("top_assists")
-      .select("*")
-      .limit(5)
+    const { data: assistsData } = await bySeason(
+      supabase.from("top_assists").select("*").order("assists", { ascending: false }).limit(5),
+      seasonId
+    )
     topAssists = assistsData
   } catch (error) {
     console.log("Top assists view not available yet")
@@ -135,8 +142,8 @@ export default async function AdminDashboard() {
 
   return (
     <AdminAuthWrapper>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-3 md:p-6">
-      <div className="mx-auto max-w-7xl space-y-6 md:space-y-8">
+      <div className="p-3 md:p-6">
+      <div className="space-y-6 md:space-y-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">

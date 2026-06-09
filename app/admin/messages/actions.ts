@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireAnyPermission } from '@/lib/rbac'
+import { getSelectedSeasonId } from '@/lib/seasons'
 
 export async function sendMessage(formData: FormData) {
   const user = await requireAnyPermission(['send_rfc', 'respond_rfc'])
@@ -11,16 +12,15 @@ export async function sendMessage(formData: FormData) {
   if (!subject || !toRole) return { ok: false, message: 'Subject and recipient role are required' }
 
   const supabase = await createClient()
-  const { data: season } = await supabase
-    .from('seasons')
-    .select('id')
-    .eq('is_current', true)
-    .maybeSingle()
+  const seasonId = await getSelectedSeasonId()
+
+  const toUserId = formData.get('to_user_id') ? String(formData.get('to_user_id')) : null
 
   const { error } = await supabase.from('messages').insert({
-    season_id: season?.id ?? null,
+    season_id: seasonId,
     from_user_id: user.id,
     to_role: toRole,
+    to_user_id: toUserId,
     subject,
     body: String(formData.get('body') ?? '') || null,
     status: 'open',
