@@ -9,10 +9,20 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { usePagination, PaginationBar, TableToolbar, downloadPdf, type CsvColumn } from "@/components/admin/table-tools"
+
+const csvColumns: CsvColumn<Team>[] = [
+  { label: "Name", value: (t) => t.name },
+  { label: "Representative", value: (t) => t.representative_name },
+  { label: "Email", value: (t) => t.contact_email },
+  { label: "Phone", value: (t) => t.contact_phone },
+  { label: "Active", value: (t) => (t.is_active ? "Yes" : "No") },
+]
 
 export function TeamsList({ teams, canManage = true }: { teams: Team[]; canManage?: boolean }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState<string | null>(null)
+  const { page, setPage, totalPages, pageItems, total } = usePagination(teams, 10)
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this team?")) return
@@ -34,7 +44,9 @@ export function TeamsList({ teams, canManage = true }: { teams: Team[]; canManag
   }
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900/50">
+    <div>
+      <TableToolbar total={total} onExport={() => downloadPdf("Teams", csvColumns, teams)} />
+      <div className="rounded-lg border border-slate-700 bg-slate-900/50">
       <Table>
         <TableHeader>
           <TableRow className="border-slate-700 hover:bg-slate-800/50">
@@ -46,7 +58,7 @@ export function TeamsList({ teams, canManage = true }: { teams: Team[]; canManag
           </TableRow>
         </TableHeader>
         <TableBody>
-          {teams.map((team) => (
+          {pageItems.map((team) => (
             <TableRow key={team.id} className="border-slate-700 hover:bg-slate-800/50">
               <TableCell className="font-semibold text-white">
                 <div className="flex items-center gap-3">
@@ -123,6 +135,8 @@ export function TeamsList({ teams, canManage = true }: { teams: Team[]; canManag
           ))}
         </TableBody>
       </Table>
+      </div>
+      <PaginationBar page={page} totalPages={totalPages} onPage={setPage} />
     </div>
   )
 }

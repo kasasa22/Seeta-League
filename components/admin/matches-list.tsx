@@ -9,10 +9,22 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { EditMatchDialog } from "@/components/admin/edit-match-dialog"
+import { usePagination, PaginationBar, TableToolbar, downloadPdf, type CsvColumn } from "@/components/admin/table-tools"
+
+const csvColumns: CsvColumn<Match>[] = [
+  { label: "Match Day", value: (m) => m.match_day },
+  { label: "Home Team", value: (m) => m.home_team?.name ?? "" },
+  { label: "Away Team", value: (m) => m.away_team?.name ?? "" },
+  { label: "Date", value: (m) => m.match_date },
+  { label: "Home Score", value: (m) => m.home_score },
+  { label: "Away Score", value: (m) => m.away_score },
+  { label: "Status", value: (m) => (m.is_completed ? "Completed" : "Scheduled") },
+]
 
 export function MatchesList({ matches, canManage = true }: { matches: Match[]; canManage?: boolean }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState<string | null>(null)
+  const { page, setPage, totalPages, pageItems, total } = usePagination(matches, 10)
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this match?")) return
@@ -34,7 +46,9 @@ export function MatchesList({ matches, canManage = true }: { matches: Match[]; c
   }
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900/50">
+    <div>
+      <TableToolbar total={total} onExport={() => downloadPdf("Matches", csvColumns, matches)} />
+      <div className="rounded-lg border border-slate-700 bg-slate-900/50">
       <Table>
         <TableHeader>
           <TableRow className="border-slate-700 hover:bg-slate-800/50">
@@ -48,7 +62,7 @@ export function MatchesList({ matches, canManage = true }: { matches: Match[]; c
           </TableRow>
         </TableHeader>
         <TableBody>
-          {matches.map((match) => (
+          {pageItems.map((match) => (
             <TableRow key={match.id} className="border-slate-700 hover:bg-slate-800/50">
               <TableCell className="text-slate-300">
                 <div className="flex items-center gap-2">
@@ -105,6 +119,8 @@ export function MatchesList({ matches, canManage = true }: { matches: Match[]; c
           ))}
         </TableBody>
       </Table>
+      </div>
+      <PaginationBar page={page} totalPages={totalPages} onPage={setPage} />
     </div>
   )
 }

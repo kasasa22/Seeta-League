@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { setUserStatus, assignRole, removeUserRole } from '@/app/admin/users/actions'
+import { usePagination, PaginationBar, TableToolbar, downloadPdf, type CsvColumn } from '@/components/admin/table-tools'
 
 interface RoleRef { id: string; key: string; name: string }
 interface NamedRef { id: string; name: string }
@@ -34,8 +35,17 @@ const statusBadge: Record<string, string> = {
   suspended: 'bg-red-500/20 text-red-400',
 }
 
+const csvColumns: CsvColumn<UserRow>[] = [
+  { label: 'Name', value: (u) => u.full_name },
+  { label: 'Email', value: (u) => u.email },
+  { label: 'Phone', value: (u) => u.phone },
+  { label: 'Status', value: (u) => u.status },
+  { label: 'Roles', value: (u) => u.user_roles.map((ur) => ur.role?.name).filter(Boolean).join('; ') },
+]
+
 export function UsersManager({ users, roles, teams, seasons, canManage }: Props) {
   const [isPending, startTransition] = useTransition()
+  const { page, setPage, totalPages, pageItems, total } = usePagination(users, 10)
   const [picks, setPicks] = useState<Record<string, { roleId: string; teamId: string; seasonId: string }>>({})
 
   const pickFor = (userId: string) =>
@@ -82,7 +92,8 @@ export function UsersManager({ users, roles, teams, seasons, canManage }: Props)
 
   return (
     <div className="space-y-4">
-      {users.map((u) => {
+      <TableToolbar total={total} onExport={() => downloadPdf('Users', csvColumns, users)} />
+      {pageItems.map((u) => {
         const pick = pickFor(u.id)
         const selectedRole = roles.find((r) => r.id === pick.roleId)
         return (
@@ -175,6 +186,7 @@ export function UsersManager({ users, roles, teams, seasons, canManage }: Props)
           </Card>
         )
       })}
+      <PaginationBar page={page} totalPages={totalPages} onPage={setPage} />
     </div>
   )
 }

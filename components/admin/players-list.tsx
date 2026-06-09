@@ -8,9 +8,22 @@ import type { Player, Team } from "@/lib/types"
 import { AddPlayerDialog } from "./add-player-dialog"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { usePagination, PaginationBar, TableToolbar, downloadPdf, type CsvColumn } from "@/components/admin/table-tools"
+
+type PlayerRow = Player & { team?: { name: string } }
+
+const csvColumns: CsvColumn<PlayerRow>[] = [
+  { label: "Name", value: (p) => p.name },
+  { label: "Team", value: (p) => p.team?.name ?? "" },
+  { label: "Jersey", value: (p) => p.jersey_number },
+  { label: "Position", value: (p) => p.position },
+  { label: "Date of Birth", value: (p) => p.date_of_birth },
+  { label: "Phone", value: (p) => p.contact_phone },
+  { label: "Email", value: (p) => p.contact_email },
+]
 
 interface PlayersListProps {
-  players: (Player & { team?: { name: string } })[]
+  players: PlayerRow[]
   teams: Team[]
   canManage?: boolean
 }
@@ -20,6 +33,7 @@ export function PlayersListComponent({ players, teams, canManage = true }: Playe
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null)
   const router = useRouter()
   const supabase = createClient()
+  const { page, setPage, totalPages, pageItems, total } = usePagination(players, 10)
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this player?")) return
@@ -54,6 +68,8 @@ export function PlayersListComponent({ players, teams, canManage = true }: Playe
         </div>
       )}
 
+      {total > 0 && <TableToolbar total={total} onExport={() => downloadPdf("Players", csvColumns, players)} />}
+
       {players.length === 0 ? (
         <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-12 text-center">
           <UserCircle className="mx-auto h-12 w-12 text-slate-600" />
@@ -74,7 +90,7 @@ export function PlayersListComponent({ players, teams, canManage = true }: Playe
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {players.map((player) => (
+              {pageItems.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-900/30">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -151,6 +167,8 @@ export function PlayersListComponent({ players, teams, canManage = true }: Playe
           </table>
         </div>
       )}
+
+      <PaginationBar page={page} totalPages={totalPages} onPage={setPage} />
 
       <AddPlayerDialog
         open={isAddDialogOpen}

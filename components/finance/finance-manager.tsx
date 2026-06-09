@@ -9,6 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { addFinanceRecord, deleteFinanceRecord } from '@/app/admin/finance/actions'
+import { usePagination, PaginationBar, TableToolbar, downloadPdf, type CsvColumn } from '@/components/admin/table-tools'
+
+const ugxPlain = (n: number) => new Intl.NumberFormat('en-US').format(n)
 
 interface NamedRef { id: string; name: string }
 interface Record {
@@ -29,8 +32,18 @@ interface Props {
 
 const ugx = (n: number) => 'UGX ' + new Intl.NumberFormat('en-US').format(n)
 
+const csvColumns: CsvColumn<Record>[] = [
+  { label: 'Date', value: (r) => r.occurred_on },
+  { label: 'Type', value: (r) => r.type },
+  { label: 'Amount (UGX)', value: (r) => ugxPlain(Number(r.amount)) },
+  { label: 'Category', value: (r) => r.category },
+  { label: 'Team', value: (r) => r.team?.name ?? '' },
+  { label: 'Description', value: (r) => r.description },
+]
+
 export function FinanceManager({ canManage, registrationFee, teams, records }: Props) {
   const [isPending, startTransition] = useTransition()
+  const { page, setPage, totalPages, pageItems, total } = usePagination(records, 10)
 
   const payments = records.filter((r) => r.type === 'payment')
   const expenses = records.filter((r) => r.type === 'expense')
@@ -164,7 +177,8 @@ export function FinanceManager({ canManage, registrationFee, teams, records }: P
             <p className="text-slate-400 text-sm">No transactions recorded yet.</p>
           ) : (
             <div className="space-y-2">
-              {records.map((r) => (
+              <TableToolbar total={total} onExport={() => downloadPdf('Finance', csvColumns, records)} />
+              {pageItems.map((r) => (
                 <div key={r.id} className="flex items-center justify-between rounded-md bg-slate-700/40 px-3 py-2">
                   <div className="flex items-center gap-3">
                     {r.type === 'payment' ? (
@@ -189,6 +203,7 @@ export function FinanceManager({ canManage, registrationFee, teams, records }: P
                   )}
                 </div>
               ))}
+              <PaginationBar page={page} totalPages={totalPages} onPage={setPage} />
             </div>
           )}
         </CardContent>
