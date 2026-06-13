@@ -1,9 +1,17 @@
+import type { Metadata } from "next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { ArrowLeft, Shield, Users, FileText, Trophy, AlertCircle, CheckCircle, Calendar, DollarSign, RefreshCw } from "lucide-react"
 import Image from "next/image"
+
+export const metadata: Metadata = {
+  title: "Rules & Regulations",
+  description:
+    "Official Seeta League rules and regulations — competition format, registration, eligibility, match day conduct and disciplinary guidelines for the alumni football championship.",
+  alternates: { canonical: "/rules" },
+}
 
 export default function RulesPage() {
   return (

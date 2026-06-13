@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -7,6 +8,13 @@ import Link from "next/link"
 import { ArrowLeft, Calendar } from "lucide-react"
 import { MatchSection } from "@/components/fixtures/match-section"
 import { getSelectedSeasonId } from "@/lib/seasons"
+
+export const metadata: Metadata = {
+  title: "Fixtures & Results",
+  description:
+    "Seeta League fixtures and results — upcoming match days, kick-off times and full-time scores from the alumni football championship season.",
+  alternates: { canonical: "/fixtures" },
+}
 
 export default async function FixturesPage() {
   const supabase = await createClient()

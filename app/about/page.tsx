@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,13 @@ import {
   Shield,
   Handshake,
 } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "Learn about Seeta League — the alumni football competition reuniting Seeta High School old students from the Main, Green, Nama and A-Level campuses. Connecting Generations through the beautiful game.",
+  alternates: { canonical: "/about" },
+}
 
 export default function AboutPage() {
   return (

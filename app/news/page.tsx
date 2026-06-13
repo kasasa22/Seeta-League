@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +15,13 @@ interface Blog {
   is_published: boolean
   created_at: string
   updated_at: string | null
+}
+
+export const metadata: Metadata = {
+  title: "News & Updates",
+  description:
+    "The latest Seeta League news, match reports, announcements and stories from the alumni football championship — Connecting Generations through football.",
+  alternates: { canonical: "/news" },
 }
 
 export default async function NewsPage() {

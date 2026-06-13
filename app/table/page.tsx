@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { getSelectedSeason } from "@/lib/seasons"
 import { Card, CardContent } from "@/components/ui/card"
@@ -5,6 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { ArrowLeft, Trophy, TrendingUp, TrendingDown, Medal, Target, Users } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "League Table & Standings",
+  description:
+    "Live Seeta League table — team standings, points, wins, draws, losses, goals and form across the season. Follow who is topping the alumni football championship.",
+  alternates: { canonical: "/table" },
+}
 
 export default async function TablePage() {
   const supabase = await createClient()

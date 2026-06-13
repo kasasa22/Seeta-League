@@ -1,0 +1,47 @@
+export const siteConfig = {
+  name: "Seeta League",
+  shortName: "Seeta League",
+  url: "https://www.seetaleague.org",
+  slogan: "Connecting Generations",
+  title: "Seeta League — Alumni Football Championship | Connecting Generations",
+  description:
+    "Seeta League is the alumni football competition uniting Seeta High School old students from the Main, Green, Nama and A-Level campuses. Follow live standings, fixtures, results, teams and player stats across the season.",
+  shortDescription:
+    "The alumni football competition uniting Seeta High School old students across the Main, Green, Nama and A-Level campuses.",
+  email: "seetaleague28@gmail.com",
+  phone: "+256786665151",
+  venue: "Arches Gardens, Kisasi",
+  locality: "Kisasi",
+  region: "Kampala",
+  country: "UG",
+  ogImage: "/aerial-football-stadium.png",
+  logo: "/logo.jpg",
+  keywords: [
+    "Seeta League",
+    "Seeta",
+    "Seeta High School",
+    "Seeta High old students",
+    "Seeta alumni football",
+    "Seeta High School alumni",
+    "alumni football league",
+    "football league Uganda",
+    "community football competition",
+    "Seeta Main campus",
+    "Seeta Green campus",
+    "Seeta Nama campus",
+    "Seeta A-Level campus",
+    "football fixtures",
+    "league standings",
+    "football competition Kampala",
+    "Arches Gardens Kisasi",
+    "Connecting Generations",
+  ],
+  socials: {
+    facebook: "",
+    twitter: "",
+    instagram: "",
+    youtube: "",
+  },
+} as const
+
+export const sameAsLinks = Object.values(siteConfig.socials).filter(Boolean)

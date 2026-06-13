@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -5,6 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { ArrowLeft, Users, Trophy } from "lucide-react"
 import { getSelectedSeasonId } from "@/lib/seasons"
+
+export const metadata: Metadata = {
+  title: "Teams",
+  description:
+    "Meet the teams of Seeta League — alumni squads representing Seeta High School's Main, Green, Nama and A-Level campuses. View rosters, logos and team profiles.",
+  alternates: { canonical: "/teams" },
+}
 
 export default async function TeamsPage() {
   const supabase = await createClient()
