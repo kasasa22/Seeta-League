@@ -20,6 +20,24 @@ export default async function ScoresPage() {
   if (seasonId) matchesQuery = matchesQuery.eq("season_id", seasonId)
   const { data: matches } = await matchesQuery
 
+  const teamIds = Array.from(
+    new Set((matches ?? []).flatMap((m) => [m.home_team_id, m.away_team_id]).filter(Boolean))
+  )
+
+  const rosters: Record<string, { id: string; name: string; jersey_number: number | null }[]> = {}
+  if (teamIds.length > 0) {
+    const { data: players } = await supabase
+      .from("players")
+      .select("id, name, jersey_number, team_id, is_active")
+      .in("team_id", teamIds)
+      .order("name", { ascending: true })
+    for (const p of players ?? []) {
+      if (p.is_active === false) continue
+      if (!rosters[p.team_id]) rosters[p.team_id] = []
+      rosters[p.team_id].push({ id: p.id, name: p.name, jersey_number: p.jersey_number })
+    }
+  }
+
   return (
     <div className="p-6">
       <div className="space-y-6">
@@ -47,7 +65,7 @@ export default async function ScoresPage() {
           </CardHeader>
           <CardContent>
             {matches && matches.length > 0 ? (
-              <EnhancedScoreEntry matches={matches} />
+              <EnhancedScoreEntry matches={matches} rosters={rosters} />
             ) : (
               <p className="py-8 text-center text-slate-400">No pending matches to update</p>
             )}

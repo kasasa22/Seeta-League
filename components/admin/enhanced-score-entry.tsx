@@ -18,10 +18,53 @@ interface GoalEvent {
   assist?: string
 }
 
-export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
+interface PlayerOption {
+  id: string
+  name: string
+  jersey_number: number | null
+}
+
+type Rosters = Record<string, PlayerOption[]>
+
+const playerSelectClass =
+  'h-10 w-full rounded-md border border-slate-600 bg-slate-700 px-3 text-sm text-white disabled:opacity-60'
+
+function PlayerSelect({
+  roster,
+  value,
+  onChange,
+  placeholder,
+}: {
+  roster: PlayerOption[]
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={roster.length === 0}
+      className={playerSelectClass}
+    >
+      <option value="">{roster.length === 0 ? 'No players registered' : placeholder}</option>
+      {roster.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
+          {p.jersey_number != null ? ` #${p.jersey_number}` : ''}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+export function EnhancedScoreEntry({ matches, rosters }: { matches: Match[]; rosters: Rosters }) {
   const router = useRouter()
   const [updating, setUpdating] = useState<string | null>(null)
   const [goals, setGoals] = useState<{ [matchId: string]: { home: GoalEvent[], away: GoalEvent[] } }>({})
+
+  const nameFor = (teamId: string, playerId: string) =>
+    (rosters[teamId] ?? []).find((p) => p.id === playerId)?.name ?? ''
 
 
   const addGoal = (matchId: string, team: 'home' | 'away') => {
@@ -75,6 +118,13 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
       return
     }
 
+    // Every goal must have a scorer selected from the roster
+    if ([...matchGoalsHome, ...matchGoalsAway].some((g) => !g.scorer)) {
+      alert("Please select a scorer for every goal.")
+      setUpdating(null)
+      return
+    }
+
       const supabase = createClient()
 
       try {
@@ -105,106 +155,32 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
         description: string
       }> = []
 
-      const getOrCreatePlayer = async (playerName: string, teamId: string): Promise<string | null> => {
-        if (!playerName?.trim()) return null
-
-        const trimmedName = playerName.trim()
-
-        const { data: existingPlayer, error: searchError } = await supabase
-          .from('players')
-          .select('id')
-          .eq('team_id', teamId)
-          .ilike('name', trimmedName)
-          .limit(1)
-          .maybeSingle()
-
-        if (searchError) {
-          console.error('Error searching for player:', searchError)
-        }
-
-        if (existingPlayer) {
-          return existingPlayer.id
-        }
-
-        const { data: newPlayer, error: insertError } = await supabase
-          .from('players')
-          .insert({
-            name: trimmedName,
-            team_id: teamId,
-            jersey_number: null,
-            position: null,
-            is_active: true
+      const pushTeamGoals = (teamGoals: GoalEvent[], teamId: string) => {
+        for (const goal of teamGoals) {
+          if (!goal.scorer) continue
+          events.push({
+            match_id: String(match.id),
+            player_id: String(goal.scorer),
+            team_id: String(teamId),
+            event_type: 'goal' as const,
+            minute: null,
+            description: nameFor(teamId, goal.scorer),
           })
-          .select('id')
-          .single()
-
-        if (insertError) {
-          console.error('Error creating player:', insertError)
-          return null
-        }
-
-        return newPlayer?.id || null
-      }
-
-      for (const goal of matchGoalsHome) {
-        if (goal.scorer?.trim()) {
-          const scorerPlayerId = await getOrCreatePlayer(goal.scorer, match.home_team_id)
-          if (scorerPlayerId) {
+          if (goal.assist) {
             events.push({
               match_id: String(match.id),
-              player_id: String(scorerPlayerId),
-              team_id: String(match.home_team_id),
-              event_type: 'goal' as const,
+              player_id: String(goal.assist),
+              team_id: String(teamId),
+              event_type: 'assist' as const,
               minute: null,
-              description: goal.scorer.trim()
+              description: nameFor(teamId, goal.assist),
             })
-
-            if (goal.assist?.trim()) {
-              const assistPlayerId = await getOrCreatePlayer(goal.assist, match.home_team_id)
-              if (assistPlayerId) {
-                events.push({
-                  match_id: String(match.id),
-                  player_id: String(assistPlayerId),
-                  team_id: String(match.home_team_id),
-                  event_type: 'assist' as const,
-                  minute: null,
-                  description: goal.assist.trim()
-                })
-              }
-            }
           }
         }
       }
 
-      for (const goal of matchGoalsAway) {
-        if (goal.scorer?.trim()) {
-          const scorerPlayerId = await getOrCreatePlayer(goal.scorer, match.away_team_id)
-          if (scorerPlayerId) {
-            events.push({
-              match_id: String(match.id),
-              player_id: String(scorerPlayerId),
-              team_id: String(match.away_team_id),
-              event_type: 'goal' as const,
-              minute: null,
-              description: goal.scorer.trim()
-            })
-
-            if (goal.assist?.trim()) {
-              const assistPlayerId = await getOrCreatePlayer(goal.assist, match.away_team_id)
-              if (assistPlayerId) {
-                events.push({
-                  match_id: String(match.id),
-                  player_id: String(assistPlayerId),
-                  team_id: String(match.away_team_id),
-                  event_type: 'assist' as const,
-                  minute: null,
-                  description: goal.assist.trim()
-                })
-              }
-            }
-          }
-        }
-      }
+      pushTeamGoals(matchGoalsHome, match.home_team_id)
+      pushTeamGoals(matchGoalsAway, match.away_team_id)
 
       if (events.length > 0) {
         console.log('Inserting events:', JSON.stringify(events, null, 2))
@@ -356,22 +332,20 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
                               </div>
                               <div>
                                 <Label className="text-xs text-slate-400">Scorer</Label>
-                                <Input
-                                  type="text"
+                                <PlayerSelect
+                                  roster={rosters[match.home_team_id] ?? []}
                                   value={goal.scorer || ''}
-                                  onChange={(e) => updateGoal(match.id, 'home', index, 'scorer', e.target.value)}
-                                  className="border-slate-600 bg-slate-700"
-                                  placeholder="Enter scorer name"
+                                  onChange={(v) => updateGoal(match.id, 'home', index, 'scorer', v)}
+                                  placeholder="Select scorer"
                                 />
                               </div>
                               <div>
                                 <Label className="text-xs text-slate-400">Assist (optional)</Label>
-                                <Input
-                                  type="text"
+                                <PlayerSelect
+                                  roster={rosters[match.home_team_id] ?? []}
                                   value={goal.assist || ''}
-                                  onChange={(e) => updateGoal(match.id, 'home', index, 'assist', e.target.value)}
-                                  className="border-slate-600 bg-slate-700"
-                                  placeholder="Enter assist player name"
+                                  onChange={(v) => updateGoal(match.id, 'home', index, 'assist', v)}
+                                  placeholder="Select assist"
                                 />
                               </div>
                             </div>
@@ -402,22 +376,20 @@ export function EnhancedScoreEntry({ matches }: { matches: Match[] }) {
                               </div>
                               <div>
                                 <Label className="text-xs text-slate-400">Scorer</Label>
-                                <Input
-                                  type="text"
+                                <PlayerSelect
+                                  roster={rosters[match.away_team_id] ?? []}
                                   value={goal.scorer || ''}
-                                  onChange={(e) => updateGoal(match.id, 'away', index, 'scorer', e.target.value)}
-                                  className="border-slate-600 bg-slate-700"
-                                  placeholder="Enter scorer name"
+                                  onChange={(v) => updateGoal(match.id, 'away', index, 'scorer', v)}
+                                  placeholder="Select scorer"
                                 />
                               </div>
                               <div>
                                 <Label className="text-xs text-slate-400">Assist (optional)</Label>
-                                <Input
-                                  type="text"
+                                <PlayerSelect
+                                  roster={rosters[match.away_team_id] ?? []}
                                   value={goal.assist || ''}
-                                  onChange={(e) => updateGoal(match.id, 'away', index, 'assist', e.target.value)}
-                                  className="border-slate-600 bg-slate-700"
-                                  placeholder="Enter assist player name"
+                                  onChange={(v) => updateGoal(match.id, 'away', index, 'assist', v)}
+                                  placeholder="Select assist"
                                 />
                               </div>
                             </div>
