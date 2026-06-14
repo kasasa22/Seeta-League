@@ -29,7 +29,7 @@ interface TeamRow {
   year: number | null
 }
 
-const CAMPUSES = ['Main', 'Nama', 'Green', 'A level campus']
+const CAMPUSES = ['Main', 'Nama', 'Green', 'A level campus', 'All Campuses']
 
 const selectClass =
   'h-10 w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 text-sm text-white'

@@ -93,7 +93,7 @@ Everything you register is tied to a **season**.
 If you haven't registered a team yet for this season, you'll see the **Register your team** form:
 
 1. **Team Name** *(required)* — e.g. *Allies*, *Club de Chege*.
-2. **Campus** *(required)* — choose one of **Main**, **Nama**, **Green**, or **A level campus**.
+2. **Campus** *(required)* — choose one of **Main**, **Nama**, **Green**, **A level campus**, or **All Campuses** (use this for a combined/merged team that draws from every campus).
 3. **Year** *(required)* — choose the team's year from the dropdown (**2000** up to the current year).
 4. **Contact Phone** *(optional)* — defaults to your phone if left blank.
 5. **Contact Email** *(optional)* — defaults to your email if left blank.

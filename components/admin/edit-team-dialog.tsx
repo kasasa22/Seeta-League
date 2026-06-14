@@ -20,7 +20,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-const CAMPUSES = ["Main", "Nama", "Green", "A level campus"]
+const CAMPUSES = ["Main", "Nama", "Green", "A level campus", "All Campuses"]
 
 function campusYears(): number[] {
   const current = new Date().getFullYear()
