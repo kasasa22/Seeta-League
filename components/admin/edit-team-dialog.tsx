@@ -2,6 +2,7 @@
 
 import type React from "react"
 
+import type { Team } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Users, Upload } from "lucide-react"
+import { Pencil, Users, Upload } from "lucide-react"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -28,10 +29,13 @@ function campusYears(): number[] {
   return years
 }
 
-export function AddTeamDialog() {
+const fieldClass = "border-slate-700 bg-slate-800 text-white"
+const selectClass = "h-10 w-full rounded-md border border-slate-700 bg-slate-800 px-3 text-sm text-white"
+
+export function EditTeamDialog({ team }: { team: Team }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [logoUrl, setLogoUrl] = useState("")
+  const [logoUrl, setLogoUrl] = useState(team.logo_url ?? "")
   const [uploading, setUploading] = useState(false)
   const router = useRouter()
 
@@ -60,8 +64,6 @@ export function AddTeamDialog() {
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const supabase = createClient()
-
     const campus = (formData.get("campus") as string) || ""
     const yearRaw = formData.get("year") as string
     if (!campus) {
@@ -75,22 +77,26 @@ export function AddTeamDialog() {
       return
     }
 
-    const { error } = await supabase.from("teams").insert({
-      name: formData.get("name") as string,
-      campus,
-      year: Number.parseInt(yearRaw, 10),
-      representative_name: formData.get("representative") as string,
-      contact_email: formData.get("email") as string,
-      contact_phone: formData.get("phone") as string,
-      logo_url: logoUrl || null,
-    })
+    const supabase = createClient()
+    const { error } = await supabase
+      .from("teams")
+      .update({
+        name: formData.get("name") as string,
+        campus,
+        year: Number.parseInt(yearRaw, 10),
+        representative_name: (formData.get("representative") as string) || null,
+        contact_email: (formData.get("email") as string) || null,
+        contact_phone: (formData.get("phone") as string) || null,
+        is_active: formData.get("is_active") === "active",
+        logo_url: logoUrl || null,
+      })
+      .eq("id", team.id)
 
     if (error) {
-      toast.error("Error adding team: " + error.message)
+      toast.error("Error updating team: " + error.message)
     } else {
-      toast.success("Team registered")
+      toast.success("Team updated")
       setOpen(false)
-      setLogoUrl("")
       router.refresh()
     }
     setLoading(false)
@@ -99,9 +105,12 @@ export function AddTeamDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
-          <Plus className="h-4 w-4" />
-          Add Team
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-400 hover:bg-blue-500/20 hover:text-blue-300"
+        >
+          <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="border-slate-700 bg-slate-900">
@@ -110,29 +119,23 @@ export function AddTeamDialog() {
             <div className="rounded-lg bg-blue-500/20 p-2">
               <Users className="h-5 w-5 text-blue-400" />
             </div>
-            <DialogTitle className="text-white">Register New Team</DialogTitle>
+            <DialogTitle className="text-white">Edit Team</DialogTitle>
           </div>
-          <DialogDescription className="text-slate-400">Add a new team to the league</DialogDescription>
+          <DialogDescription className="text-slate-400">Update team details</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-slate-300">
               Team Name *
             </Label>
-            <Input id="name" name="name" required className="border-slate-700 bg-slate-800 text-white" />
+            <Input id="name" name="name" required defaultValue={team.name} className={fieldClass} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="campus" className="text-slate-300">
                 Campus *
               </Label>
-              <select
-                id="campus"
-                name="campus"
-                required
-                defaultValue=""
-                className="h-10 w-full rounded-md border border-slate-700 bg-slate-800 px-3 text-sm text-white"
-              >
+              <select id="campus" name="campus" required defaultValue={team.campus ?? ""} className={selectClass}>
                 <option value="" disabled>
                   Select campus
                 </option>
@@ -147,13 +150,7 @@ export function AddTeamDialog() {
               <Label htmlFor="year" className="text-slate-300">
                 Year *
               </Label>
-              <select
-                id="year"
-                name="year"
-                required
-                defaultValue=""
-                className="h-10 w-full rounded-md border border-slate-700 bg-slate-800 px-3 text-sm text-white"
-              >
+              <select id="year" name="year" required defaultValue={team.year ?? ""} className={selectClass}>
                 <option value="" disabled>
                   Select year
                 </option>
@@ -169,19 +166,40 @@ export function AddTeamDialog() {
             <Label htmlFor="representative" className="text-slate-300">
               Representative Name
             </Label>
-            <Input id="representative" name="representative" className="border-slate-700 bg-slate-800 text-white" />
+            <Input
+              id="representative"
+              name="representative"
+              defaultValue={team.representative_name ?? ""}
+              className={fieldClass}
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-slate-300">
+                Contact Email
+              </Label>
+              <Input id="email" name="email" type="email" defaultValue={team.contact_email ?? ""} className={fieldClass} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-slate-300">
+                Contact Phone
+              </Label>
+              <Input id="phone" name="phone" type="tel" defaultValue={team.contact_phone ?? ""} className={fieldClass} />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-slate-300">
-              Contact Email
+            <Label htmlFor="is_active" className="text-slate-300">
+              Status
             </Label>
-            <Input id="email" name="email" type="email" className="border-slate-700 bg-slate-800 text-white" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone" className="text-slate-300">
-              Contact Phone
-            </Label>
-            <Input id="phone" name="phone" type="tel" className="border-slate-700 bg-slate-800 text-white" />
+            <select
+              id="is_active"
+              name="is_active"
+              defaultValue={team.is_active ? "active" : "inactive"}
+              className={selectClass}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
           <div className="space-y-2">
             <Label className="text-slate-300">Team Logo</Label>
@@ -189,12 +207,7 @@ export function AddTeamDialog() {
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white hover:bg-slate-700">
                 <Upload className="h-4 w-4" />
                 {uploading ? "Uploading..." : "Choose logo"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => onLogo(e.target.files?.[0])}
-                />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => onLogo(e.target.files?.[0])} />
               </label>
               {logoUrl && <img src={logoUrl} alt="logo" className="h-12 w-12 rounded object-cover" />}
             </div>
@@ -204,7 +217,7 @@ export function AddTeamDialog() {
             className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
             disabled={loading || uploading}
           >
-            {loading ? "Adding..." : "Add Team"}
+            {loading ? "Saving..." : "Save Changes"}
           </Button>
         </form>
       </DialogContent>

@@ -13,12 +13,18 @@ import {
   Target,
   Award,
   Newspaper,
+  BarChart3,
+  Crown,
+  Zap,
+  Sparkles,
 } from "lucide-react"
 import { MatchTicker } from "@/components/match-ticker"
 import { FeaturedMatch } from "@/components/featured-match"
 import { MatchCenter } from "@/components/match-center"
 import { TeamsCarousel } from "@/components/teams-carousel"
-import { getSelectedSeasonId } from "@/lib/seasons"
+import { CountUp } from "@/components/count-up"
+import { getSelectedSeason, getSeasons } from "@/lib/seasons"
+import { getStatsCentreData } from "@/lib/stats"
 
 function bySeason<T>(query: T, seasonId: string | null): T {
   return seasonId ? (query as any).eq("season_id", seasonId) : query
@@ -26,7 +32,9 @@ function bySeason<T>(query: T, seasonId: string | null): T {
 
 export default async function HomePage() {
   const supabase = await createClient()
-  const seasonId = await getSelectedSeasonId()
+  const season = await getSelectedSeason()
+  const seasonId = season?.id ?? null
+  const stats = await getStatsCentreData(seasonId)
 
   const matchSelect =
     "*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name)"
@@ -85,16 +93,21 @@ export default async function HomePage() {
   const featuredUpcoming = upcomingFixtures?.[0] || null
   const featuredResult = latestResults?.[0] || null
 
-  // Get top scorers
-  let topScorers = null
-  try {
-    const { data: scorersData } = await supabase
-      .from("top_scorers")
-      .select("*")
-      .limit(5)
-    topScorers = scorersData
-  } catch {
-    // View not available
+  // Season-filtered leaderboards from the Stats Centre data layer
+  const topScorers = stats.topScorers
+  const star = stats.comparePlayers[0]?.involvements ? stats.comparePlayers[0] : null
+
+  // Defending champions — most recent completed season with a recorded champion
+  const seasons = await getSeasons()
+  const lastChampSeason = seasons.find((s) => s.champion_team_id && s.id !== seasonId)
+  let champion: { name: string; seasonName: string } | null = null
+  if (lastChampSeason?.champion_team_id) {
+    const { data: champTeam } = await supabase
+      .from("teams")
+      .select("name")
+      .eq("id", lastChampSeason.champion_team_id)
+      .maybeSingle()
+    if (champTeam) champion = { name: champTeam.name, seasonName: lastChampSeason.name }
   }
 
   // Fetch latest news/blogs
@@ -157,9 +170,17 @@ export default async function HomePage() {
                   priority
                 />
               </div>
-              <Badge className="mb-4 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                Season 2025
-              </Badge>
+              <div className="mb-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                  {season?.name ?? "Current Season"}
+                </Badge>
+                {champion && (
+                  <Badge className="gap-1 border-amber-400/30 bg-amber-400/15 text-amber-300">
+                    <Crown className="h-3.5 w-3.5" />
+                    Champions: {champion.name}
+                  </Badge>
+                )}
+              </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-4">
                 SEETA LEAGUE
               </h1>
@@ -171,27 +192,30 @@ export default async function HomePage() {
               {/* Quick Stats */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 mb-8">
                 <div className="text-center">
-                  <p className="text-3xl sm:text-4xl font-black text-emerald-400">
-                    {teams?.length || 0}
-                  </p>
+                  <CountUp
+                    value={teams?.length || 0}
+                    className="block text-3xl sm:text-4xl font-black text-emerald-400 tabular-nums"
+                  />
                   <p className="text-xs uppercase tracking-wider text-white/60">
                     Teams
                   </p>
                 </div>
                 <div className="h-8 w-px bg-white/20" />
                 <div className="text-center">
-                  <p className="text-3xl sm:text-4xl font-black text-emerald-400">
-                    {matches?.length || 0}
-                  </p>
+                  <CountUp
+                    value={matches?.length || 0}
+                    className="block text-3xl sm:text-4xl font-black text-emerald-400 tabular-nums"
+                  />
                   <p className="text-xs uppercase tracking-wider text-white/60">
                     Matches
                   </p>
                 </div>
                 <div className="h-8 w-px bg-white/20" />
                 <div className="text-center">
-                  <p className="text-3xl sm:text-4xl font-black text-emerald-400">
-                    {totalGoals}
-                  </p>
+                  <CountUp
+                    value={totalGoals}
+                    className="block text-3xl sm:text-4xl font-black text-emerald-400 tabular-nums"
+                  />
                   <p className="text-xs uppercase tracking-wider text-white/60">
                     Goals
                   </p>
@@ -219,6 +243,16 @@ export default async function HomePage() {
                     All Fixtures
                   </Button>
                 </Link>
+                <Link href="/statistics">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full sm:w-auto border-white/30 bg-white/10 text-white hover:bg-white/20 font-semibold"
+                  >
+                    <BarChart3 className="mr-2 h-5 w-5" />
+                    Stats Centre
+                  </Button>
+                </Link>
               </div>
             </div>
 
@@ -241,6 +275,80 @@ export default async function HomePage() {
             fixtures={upcomingFixtures || []}
             results={latestResults || []}
           />
+        </section>
+
+        {/* Star of the Season */}
+        {star && (
+          <section>
+            <Card className="overflow-hidden border-emerald-500/30">
+              <div className="grid items-center gap-6 bg-gradient-to-br from-emerald-600 via-emerald-700 to-slate-900 p-6 sm:p-8 md:grid-cols-[auto_1fr]">
+                <div className="flex items-center gap-5">
+                  <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/10 ring-2 ring-white/30 sm:h-28 sm:w-28">
+                    {star.photo_url ? (
+                      <img src={star.photo_url} alt={star.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-3xl font-black text-white">
+                        {star.name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("")}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-white">
+                    <Badge className="mb-2 gap-1 bg-amber-400/20 text-amber-200 border-amber-400/30">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Star of the Season
+                    </Badge>
+                    <p className="text-2xl font-black leading-tight sm:text-3xl">{star.name}</p>
+                    <p className="text-sm text-white/70">{star.team_name ?? "Free agent"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-8">
+                  <div className="text-center text-white">
+                    <p className="text-3xl font-black tabular-nums sm:text-4xl">{star.goals}</p>
+                    <p className="text-xs uppercase tracking-wider text-white/60">Goals</p>
+                  </div>
+                  <div className="h-10 w-px bg-white/20" />
+                  <div className="text-center text-white">
+                    <p className="text-3xl font-black tabular-nums sm:text-4xl">{star.assists}</p>
+                    <p className="text-xs uppercase tracking-wider text-white/60">Assists</p>
+                  </div>
+                  <div className="h-10 w-px bg-white/20" />
+                  <div className="text-center text-white">
+                    <p className="text-3xl font-black tabular-nums text-amber-300 sm:text-4xl">{star.involvements}</p>
+                    <p className="text-xs uppercase tracking-wider text-white/60">G+A</p>
+                  </div>
+                  <Link href={`/players/${star.id}`} className="hidden sm:block">
+                    <Button className="bg-white text-emerald-700 hover:bg-white/90 font-semibold">
+                      View Profile
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          </section>
+        )}
+
+        {/* Stats Centre teaser */}
+        <section>
+          <div className="flex flex-col items-start gap-4 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-card to-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
+                <Zap className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black tracking-tight sm:text-2xl">Explore the Stats Centre</h2>
+                <p className="text-sm text-muted-foreground">
+                  Top scorers, assists, clean sheets, form guides and points trends — all in one place.
+                </p>
+              </div>
+            </div>
+            <Link href="/statistics" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold sm:w-auto">
+                <BarChart3 className="mr-2 h-5 w-5" />
+                Open Stats Centre
+              </Button>
+            </Link>
+          </div>
         </section>
 
         {/* League Table & Stats */}
@@ -467,7 +575,7 @@ export default async function HomePage() {
                           </div>
                         </div>
                         <span className="font-bold text-emerald-500">
-                          {scorer.goals}
+                          {scorer.value}
                         </span>
                       </div>
                     ))}

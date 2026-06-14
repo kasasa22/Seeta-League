@@ -25,6 +25,20 @@ interface TeamRow {
   contact_phone: string | null
   contact_email: string | null
   logo_url: string | null
+  campus: string | null
+  year: number | null
+}
+
+const CAMPUSES = ['Main', 'Nama', 'Green', 'A level campus']
+
+const selectClass =
+  'h-10 w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 text-sm text-white'
+
+function campusYears(): number[] {
+  const current = new Date().getFullYear()
+  const years: number[] = []
+  for (let y = current; y >= 2000; y--) years.push(y)
+  return years
 }
 interface PlayerRow {
   id: string
@@ -69,6 +83,12 @@ export function CaptainPortal({ season, team, players, deadlinePassed }: Props) 
           <div>
             <h2 className="text-xl font-black text-white">{team.name}</h2>
             <p className="text-sm text-slate-400">{players.length} players registered</p>
+            {(team.campus || team.year) && (
+              <div className="mt-1 flex flex-wrap gap-2">
+                {team.campus && <Badge className="bg-emerald-600/20 text-emerald-300">{team.campus} Campus</Badge>}
+                {team.year && <Badge className="bg-slate-600/40 text-slate-200">{team.year}</Badge>}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -126,6 +146,26 @@ function TeamForm() {
           <div className="space-y-2">
             <Label htmlFor="name" className="text-white">Team Name *</Label>
             <Input id="name" name="name" required className="border-slate-600 bg-slate-700/50 text-white" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="campus" className="text-white">Campus *</Label>
+              <select id="campus" name="campus" required defaultValue="" className={selectClass}>
+                <option value="" disabled>Select campus</option>
+                {CAMPUSES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="year" className="text-white">Year *</Label>
+              <select id="year" name="year" required defaultValue="" className={selectClass}>
+                <option value="" disabled>Select year</option>
+                {campusYears().map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -215,12 +255,7 @@ function PlayerForm({ teamId }: { teamId: string }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="position" className="text-white">Position</Label>
-              <select
-                id="position"
-                name="position"
-                defaultValue=""
-                className="h-10 w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 text-sm text-white"
-              >
+              <select id="position" name="position" defaultValue="" className={selectClass}>
                 <option value="">Select position</option>
                 <option value="Goalkeeper">Goalkeeper</option>
                 <option value="Defender">Defender</option>
@@ -229,8 +264,12 @@ function PlayerForm({ teamId }: { teamId: string }) {
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dob" className="text-white">Date of Birth</Label>
-              <Input id="dob" name="date_of_birth" type="date" className="border-slate-600 bg-slate-700/50 text-white" />
+              <Label htmlFor="pphone" className="text-white">Contact Phone</Label>
+              <Input id="pphone" name="contact_phone" type="tel" className="border-slate-600 bg-slate-700/50 text-white" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pemail" className="text-white">Contact Email</Label>
+              <Input id="pemail" name="contact_email" type="email" className="border-slate-600 bg-slate-700/50 text-white" />
             </div>
           </div>
           <div className="space-y-2">

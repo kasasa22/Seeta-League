@@ -5,6 +5,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
     { path: "/", priority: 1, changeFrequency: "daily" as const },
     { path: "/table", priority: 0.9, changeFrequency: "daily" as const },
+    { path: "/statistics", priority: 0.9, changeFrequency: "daily" as const },
     { path: "/fixtures", priority: 0.9, changeFrequency: "daily" as const },
     { path: "/teams", priority: 0.8, changeFrequency: "weekly" as const },
     { path: "/news", priority: 0.8, changeFrequency: "daily" as const },

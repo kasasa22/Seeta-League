@@ -17,6 +17,8 @@ export interface Season {
 export interface Team {
   id: string
   name: string
+  campus: string | null
+  year: number | null
   representative_name: string | null
   contact_phone: string | null
   contact_email: string | null

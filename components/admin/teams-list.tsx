@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { usePagination, PaginationBar, TableToolbar, downloadPdf, type CsvColumn } from "@/components/admin/table-tools"
+import { EditTeamDialog } from "@/components/admin/edit-team-dialog"
 
 const csvColumns: CsvColumn<Team>[] = [
   { label: "Name", value: (t) => t.name },
@@ -118,6 +119,7 @@ export function TeamsList({ teams, canManage = true }: { teams: Team[]; canManag
                       <Eye className="h-4 w-4" />
                     </Button>
                   </Link>
+                  {canManage && <EditTeamDialog team={team} />}
                   {canManage && (
                     <Button
                       variant="ghost"

@@ -1,11 +1,13 @@
 import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { getSelectedSeason } from "@/lib/seasons"
+import { getStatsCentreData } from "@/lib/stats"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { ArrowLeft, Trophy, TrendingUp, TrendingDown, Medal, Target, Users } from "lucide-react"
+import { ArrowLeft, Trophy, TrendingUp, TrendingDown, Medal, BarChart3 } from "lucide-react"
+import { PlayerLeaderboard, CleanSheetBoard } from "@/components/stats/stats-centre"
 
 export const metadata: Metadata = {
   title: "League Table & Standings",
@@ -50,27 +52,10 @@ export default async function TablePage() {
     }
   }
 
-  // Get top scorers and assists (with error handling for missing views)
-  let topScorers = null
-  let topAssists = null
-
-  try {
-    let scorersQuery = supabase.from("top_scorers").select("*").order("goals", { ascending: false }).limit(5)
-    if (season) scorersQuery = scorersQuery.eq("season_id", season.id)
-    const { data: scorersData } = await scorersQuery
-    topScorers = scorersData
-  } catch (error) {
-    console.log("Top scorers view not available yet")
-  }
-
-  try {
-    let assistsQuery = supabase.from("top_assists").select("*").order("assists", { ascending: false }).limit(5)
-    if (season) assistsQuery = assistsQuery.eq("season_id", season.id)
-    const { data: assistsData } = await assistsQuery
-    topAssists = assistsData
-  } catch (error) {
-    console.log("Top assists view not available yet")
-  }
+  // Player & team leaderboards for the stats section
+  const stats = await getStatsCentreData(season?.id ?? null)
+  const hasLeaderboards =
+    stats.topScorers.length > 0 || stats.topAssists.length > 0 || stats.cleanSheets.length > 0
 
   const teamImages: Record<string, string> = {
     "godfather's": "/teams/godfathers.png",
@@ -267,98 +252,46 @@ export default async function TablePage() {
           </p>
         </div>
 
-        {/* Player Statistics */}
-        {(topScorers && topScorers.length > 0) || (topAssists && topAssists.length > 0) ? (
-          <div className="mt-12 grid gap-6 md:grid-cols-2">
-            {/* Top Scorers */}
-            {topScorers && topScorers.length > 0 && (
-              <Card className="overflow-hidden border-accent/30">
-                <CardContent className="p-0">
-                  <div className="bg-emerald-500 p-4">
-                    <div className="flex items-center gap-2">
-                      <Target className="h-5 w-5 text-white" />
-                      <h3 className="text-xl font-bold text-white">Top Scorers</h3>
-                    </div>
-                    <p className="text-emerald-100 text-sm mt-1">Leading goal scorers this season</p>
-                  </div>
-                  <div className="p-4">
-                    <div className="space-y-3">
-                      {topScorers.map((scorer, index) => (
-                        <div key={scorer.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                          <div className="flex items-center gap-3">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                              index === 0 ? "bg-emerald-500/20 text-emerald-600" :
-                              index === 1 ? "bg-slate-500/20 text-slate-600" :
-                              index === 2 ? "bg-amber-700/20 text-amber-700" :
-                              "bg-muted text-muted-foreground"
-                            }`}>
-                              {index + 1}
-                            </div>
-                            <div>
-                              <p className="font-semibold">
-                                {scorer.player_name}
-                                {scorer.jersey_number && <span className="text-muted-foreground ml-1">#{scorer.jersey_number}</span>}
-                              </p>
-                              <p className="text-sm text-muted-foreground">{scorer.team_name}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-emerald-600 text-lg">{scorer.goals || 0}</p>
-                            <p className="text-xs text-muted-foreground">goals</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Top Assists */}
-            {topAssists && topAssists.length > 0 && (
-              <Card className="overflow-hidden border-accent/30">
-                <CardContent className="p-0">
-                  <div className="bg-blue-500 p-4">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-white" />
-                      <h3 className="text-xl font-bold text-white">Top Assists</h3>
-                    </div>
-                    <p className="text-blue-100 text-sm mt-1">Leading assist providers this season</p>
-                  </div>
-                  <div className="p-4">
-                    <div className="space-y-3">
-                      {topAssists.map((assist, index) => (
-                        <div key={assist.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                          <div className="flex items-center gap-3">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                              index === 0 ? "bg-blue-500/20 text-blue-600" :
-                              index === 1 ? "bg-slate-500/20 text-slate-600" :
-                              index === 2 ? "bg-amber-700/20 text-amber-700" :
-                              "bg-muted text-muted-foreground"
-                            }`}>
-                              {index + 1}
-                            </div>
-                            <div>
-                              <p className="font-semibold">
-                                {assist.player_name}
-                                {assist.jersey_number && <span className="text-muted-foreground ml-1">#{assist.jersey_number}</span>}
-                              </p>
-                              <p className="text-sm text-muted-foreground">{assist.team_name}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-blue-600 text-lg">{assist.assists || 0}</p>
-                            <p className="text-xs text-muted-foreground">assists</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+        {/* Player & Team Statistics */}
+        {hasLeaderboards && (
+          <div className="mt-12">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-accent" />
+                <h2 className="text-2xl font-black tracking-tight">Top Performers</h2>
+              </div>
+              <Link href="/statistics">
+                <Button variant="outline" size="sm">
+                  Full Stats Centre
+                  <TrendingUp className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+            <div className="grid gap-6 lg:grid-cols-3">
+              <PlayerLeaderboard
+                title="Top Scorers"
+                subtitle="Leading goal scorers"
+                iconKey="goals"
+                headerClass="bg-emerald-500"
+                valueClass="text-emerald-600 dark:text-emerald-400"
+                unit="goals"
+                rows={stats.topScorers}
+                limit={5}
+              />
+              <PlayerLeaderboard
+                title="Top Assists"
+                subtitle="Leading assist providers"
+                iconKey="assists"
+                headerClass="bg-blue-500"
+                valueClass="text-blue-600 dark:text-blue-400"
+                unit="assists"
+                rows={stats.topAssists}
+                limit={5}
+              />
+              <CleanSheetBoard rows={stats.cleanSheets} limit={5} />
+            </div>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   )

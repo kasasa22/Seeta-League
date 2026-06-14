@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, Trophy, Calendar, Users, BarChart3, Newspaper, Settings, Camera } from 'lucide-react'
+import { Menu, Trophy, Calendar, Users, BarChart3, LineChart, Newspaper, Settings, Camera } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,7 @@ const navItems = [
   { href: '/', label: 'Home', icon: Trophy },
   { href: '/fixtures', label: 'Matches', icon: Calendar },
   { href: '/table', label: 'Table', icon: BarChart3 },
+  { href: '/statistics', label: 'Statistics', icon: LineChart },
   { href: '/teams', label: 'Teams', icon: Users },
   { href: '/news', label: 'News', icon: Newspaper },
   { href: '/activities', label: 'Activities', icon: Camera },

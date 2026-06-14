@@ -26,7 +26,6 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
   const [teamId, setTeamId] = useState("")
   const [jerseyNumber, setJerseyNumber] = useState("")
   const [position, setPosition] = useState("")
-  const [dateOfBirth, setDateOfBirth] = useState("")
   const [contactPhone, setContactPhone] = useState("")
   const [contactEmail, setContactEmail] = useState("")
   const [photoUrl, setPhotoUrl] = useState("")
@@ -61,7 +60,6 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
       setTeamId(editingPlayer.team_id)
       setJerseyNumber(editingPlayer.jersey_number?.toString() || "")
       setPosition(editingPlayer.position || "")
-      setDateOfBirth(editingPlayer.date_of_birth || "")
       setContactPhone(editingPlayer.contact_phone || "")
       setContactEmail(editingPlayer.contact_email || "")
       setPhotoUrl((editingPlayer as any).photo_url || "")
@@ -75,7 +73,6 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
     setTeamId("")
     setJerseyNumber("")
     setPosition("")
-    setDateOfBirth("")
     setContactPhone("")
     setContactEmail("")
     setPhotoUrl("")
@@ -85,12 +82,14 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
     e.preventDefault()
     setIsSubmitting(true)
 
+    const selectedTeam = teams.find((t) => t.id === teamId)
+
     const playerData = {
       name,
       team_id: teamId,
       jersey_number: jerseyNumber ? Number.parseInt(jerseyNumber) : null,
       position: position || null,
-      date_of_birth: dateOfBirth || null,
+      year: selectedTeam?.year ?? null,
       contact_phone: contactPhone || null,
       contact_email: contactEmail || null,
       photo_url: photoUrl || null,
@@ -107,8 +106,9 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
     }
 
     if (error) {
-      alert("Error saving player: " + error.message)
+      toast.error("Error saving player: " + error.message)
     } else {
+      toast.success(editingPlayer ? "Player updated" : "Player added")
       resetForm()
       onOpenChange(false)
       router.refresh()
@@ -200,17 +200,6 @@ export function AddPlayerDialog({ open, onOpenChange, teams, editingPlayer }: Ad
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="dob">Date of Birth</Label>
-            <Input
-              id="dob"
-              type="date"
-              value={dateOfBirth}
-              onChange={(e) => setDateOfBirth(e.target.value)}
-              className="border-slate-700 bg-slate-800 text-white"
-            />
           </div>
 
           <div className="space-y-2">

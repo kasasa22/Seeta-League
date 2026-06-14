@@ -17,6 +17,13 @@ export async function registerTeam(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim()
   if (!name) return { ok: false, message: 'Team name is required' }
 
+  const campus = String(formData.get('campus') ?? '').trim()
+  if (!campus) return { ok: false, message: 'Campus is required' }
+
+  const yearRaw = formData.get('year')
+  const year = yearRaw ? Number.parseInt(String(yearRaw), 10) : null
+  if (!year) return { ok: false, message: 'Year is required' }
+
   const supabase = await createClient()
 
   const { data: existing } = await supabase
@@ -29,6 +36,8 @@ export async function registerTeam(formData: FormData) {
 
   const { error } = await supabase.from('teams').insert({
     name,
+    campus,
+    year,
     representative_name: String(formData.get('representative_name') ?? '') || user.full_name,
     contact_phone: String(formData.get('contact_phone') ?? '') || null,
     contact_email: String(formData.get('contact_email') ?? '') || user.email,
@@ -64,7 +73,7 @@ export async function registerPlayer(formData: FormData) {
 
   const { data: team } = await supabase
     .from('teams')
-    .select('id')
+    .select('id, year')
     .eq('id', teamId)
     .eq('captain_id', user.id)
     .maybeSingle()
@@ -76,7 +85,7 @@ export async function registerPlayer(formData: FormData) {
     team_id: teamId,
     jersey_number: jersey ? Number.parseInt(String(jersey)) : null,
     position: String(formData.get('position') ?? '') || null,
-    date_of_birth: String(formData.get('date_of_birth') ?? '') || null,
+    year: team.year ?? null,
     contact_phone: String(formData.get('contact_phone') ?? '') || null,
     contact_email: String(formData.get('contact_email') ?? '') || null,
     photo_url: photoUrl,
