@@ -217,7 +217,7 @@ export default function PrivacyPolicyPage() {
                 </p>
                 <div className="bg-muted/50 rounded-lg p-4">
                   <p><strong className="text-foreground">Email:</strong> info@seetaleague.com</p>
-                  <p><strong className="text-foreground">Phone:</strong> +256 700 000 000</p>
+                  <p><strong className="text-foreground">Phone:</strong> +25670496769</p>
                   <p><strong className="text-foreground">Address:</strong> Seeta, Mukono District, Uganda</p>
                 </div>
               </CardContent>

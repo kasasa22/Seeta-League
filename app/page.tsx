@@ -23,6 +23,7 @@ import { FeaturedMatch } from "@/components/featured-match"
 import { MatchCenter } from "@/components/match-center"
 import { TeamsCarousel } from "@/components/teams-carousel"
 import { CountUp } from "@/components/count-up"
+import { AiRoundup } from "@/components/home/ai-roundup"
 import { getSelectedSeason, getSeasons } from "@/lib/seasons"
 import { getStatsCentreData } from "@/lib/stats"
 
@@ -350,6 +351,9 @@ export default async function HomePage() {
             </Link>
           </div>
         </section>
+
+        {/* AI Matchday Roundup */}
+        <AiRoundup />
 
         {/* League Table & Stats */}
         <section className="grid gap-8 lg:grid-cols-3">

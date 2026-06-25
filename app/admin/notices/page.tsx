@@ -67,7 +67,7 @@ export default function AdminNoticesPage() {
               <CardTitle className="text-white">Create Notice</CardTitle>
             </CardHeader>
             <CardContent>
-              <PostForm endpoint="/api/notices" onSaved={() => { setShowForm(false); fetchNotices() }} />
+              <PostForm endpoint="/api/notices" aiKinds={['notice', 'roundup']} onSaved={() => { setShowForm(false); fetchNotices() }} />
             </CardContent>
           </Card>
         )}

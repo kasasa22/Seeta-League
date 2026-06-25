@@ -74,7 +74,7 @@ export default function AdminBlogsPage() {
               <CardTitle className="text-white">Create Blog</CardTitle>
             </CardHeader>
             <CardContent>
-              <PostForm endpoint="/api/blogs" onSaved={() => { setShowForm(false); fetchItems() }} />
+              <PostForm endpoint="/api/blogs" aiKinds={['report', 'roundup', 'notice']} onSaved={() => { setShowForm(false); fetchItems() }} />
             </CardContent>
           </Card>
         )}

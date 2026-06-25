@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { EditMatchDialog } from "@/components/admin/edit-match-dialog"
+import { MatchReportButton } from "@/components/admin/match-report-button"
 import { usePagination, PaginationBar, TableToolbar, downloadPdf, type CsvColumn } from "@/components/admin/table-tools"
 
 const csvColumns: CsvColumn<Match>[] = [
@@ -100,6 +101,7 @@ export function MatchesList({ matches, canManage = true }: { matches: Match[]; c
               <TableCell className="text-right">
                 {canManage ? (
                   <div className="flex items-center justify-end gap-2">
+                    {match.is_completed && <MatchReportButton match={match} />}
                     {match.is_completed && <EditMatchDialog match={match} />}
                     <Button
                       variant="ghost"

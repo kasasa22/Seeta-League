@@ -98,7 +98,7 @@ export default function ContactPage() {
                         href="tel:+256700000000"
                         className="text-sm text-muted-foreground hover:text-emerald-500 transition-colors"
                       >
-                        +256 700 000 000
+                        +25670496769
                       </a>
                     </div>
                   </CardContent>
@@ -224,7 +224,7 @@ export default function ContactPage() {
                       <Input
                         id="phone"
                         type="tel"
-                        placeholder="+256 700 000 000"
+                        placeholder="+25670496769"
                       />
                     </div>
 

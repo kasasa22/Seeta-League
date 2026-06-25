@@ -51,7 +51,7 @@ export function SiteFooter() {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                <span>+256 700 000 000</span>
+                <span>+25670496769</span>
               </div>
             </div>
           </div>

@@ -14,11 +14,10 @@ export function RichTextEditor({ value, onChange, placeholder }: Props) {
   const ref = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
-    if (ref.current && ref.current.innerHTML !== value) {
+    if (ref.current && ref.current.innerHTML !== (value || '')) {
       ref.current.innerHTML = value || ''
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [value])
 
   const sync = () => onChange(ref.current?.innerHTML || '')
 
